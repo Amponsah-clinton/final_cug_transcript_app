@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import os
+import sys
+
 print("Content-Type: text/html")
 print()
 print("<h1>Python is Working!</h1>")
