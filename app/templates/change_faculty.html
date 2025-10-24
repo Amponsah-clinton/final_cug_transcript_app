@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Change Faculty Registrar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Change Faculty Registrar
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Current Faculty:</strong> 
+                        {% if current_faculty %}
+                            {{ current_faculty.name }} - {{ current_faculty.faculty_name }}
+                        {% else %}
+                            No faculty selected
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Transcript Details:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Student:</strong> {{ transcript_request.student.name }}</li>
+                            <li><strong>Index Number:</strong> {{ transcript_request.student.index_number }}</li>
+                            <li><strong>Reference Code:</strong> {{ transcript_request.reference_code }}</li>
+                            <li><strong>Type:</strong> {{ transcript_request.get_transcript_type_display }}</li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.faculty_registrar.id_for_label }}" class="form-label">
+                                {{ form.faculty_registrar.label }}
+                            </label>
+                            {{ form.faculty_registrar }}
+                            {% if form.faculty_registrar.errors %}
+                                <div class="text-danger small">{{ form.faculty_registrar.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.reason.id_for_label }}" class="form-label">
+                                {{ form.reason.label }}
+                            </label>
+                            {{ form.reason }}
+                            {% if form.reason.errors %}
+                                <div class="text-danger small">{{ form.reason.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-exchange-alt me-1"></i>
+                                Change Faculty
+                            </button>
+                            <a href="{% url 'request_detail' transcript_request.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

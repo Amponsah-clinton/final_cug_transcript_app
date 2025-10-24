@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="card p-4 mx-auto" style="max-width:800px;">
+    <h4 class="mb-3">Officers</h4>
+    <p class="text-muted">Click an officer to edit their details and official signature/image.</p>
+
+    <div class="list-group">
+      {% for role, info in role_map.items %}
+        <div class="list-group-item d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            <img src="{% static 'images/' %}{{ role }}.png" alt="{{ role|title }}" width="72" height="72" class="rounded me-3" onerror="this.onerror=null;this.src='{{ STATIC_URL }}images/registrar.jpg';">
+            <div>
+              <div class="fw-bold">{{ info.display_name }}</div>
+              {% if info.profile %}
+                <div class="small text-muted">{{ info.profile.user.get_full_name }} - {{ info.profile.staff_id }}</div>
+              {% else %}
+                <div class="small text-muted">(Not set)</div>
+              {% endif %}
+            </div>
+          </div>
+          <div>
+            <a href="{% url 'edit_officer' role %}" class="btn btn-sm btn-primary">Edit</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-4">
+      <a href="{% url 'staff_profile_list' %}" class="btn btn-outline-secondary">Back to staff list</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

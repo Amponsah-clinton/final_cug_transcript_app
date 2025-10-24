@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Edit Department</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Department Name</label>
+            <input type="text" name="department" class="form-control" value="{{ dept.department }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Head of Department</label>
+            <input type="text" name="HoD" class="form-control" value="{{ dept.HoD }}" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{% url 'department_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

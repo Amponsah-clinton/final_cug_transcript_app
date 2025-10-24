@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+/* 🌿 Overall Page Styling */
+body {
+  background: linear-gradient(135deg, #f5fff7, #e8f9f0);
+}
+
+/* 🪄 Card Enhancement */
+.card {
+  border-radius: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 128, 0, 0.1);
+}
+
+/* ✨ Table Style */
+.table thead {
+  background: linear-gradient(90deg, #20c997, #198754);
+  color: white;
+  border: none;
+}
+.table-hover tbody tr:hover {
+  background: #f1fff6;
+}
+
+/* 💬 Buttons */
+.btn-success {
+  background: linear-gradient(135deg, #20c997, #198754);
+  border: none;
+  transition: all 0.3s ease;
+}
+.btn-success:hover {
+  background: linear-gradient(135deg, #198754, #20c997);
+  transform: scale(1.02);
+}
+.btn-outline-success:hover {
+  color: white;
+  background-color: #20c997;
+}
+
+/* ✨ Floating animation for buttons */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.btn-success.animated {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+/* 🎨 Modal Styling */
+.modal-content {
+  border-radius: 20px;
+  overflow: hidden;
+}
+.modal-header {
+  background: linear-gradient(135deg, #20c997, #128C7E);
+}
+.modal-title i {
+  color: #fff;
+}
+
+/* 🧭 Form Styling */
+form label {
+  color: #198754;
+  font-weight: 600;
+}
+</style>
+
+<div class="container py-5">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="fw-bold text-success d-flex align-items-center">
+      <i class="fab fa-whatsapp me-2 fs-3"></i>Manage Official WhatsApp Groups
+    </h2>
+    <button class="btn btn-success animated" data-bs-toggle="collapse" data-bs-target="#createGroupForm">
+      <i class="fas fa-plus-circle me-2"></i>Add New Group
+    </button>
+  </div>
+
+  <!-- ✅ CREATE GROUP FORM -->
+  <div class="collapse mb-5" id="createGroupForm">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="fw-bold text-success mb-3">
+          <i class="fas fa-pen-to-square me-2"></i>Create a New WhatsApp Group
+        </h5>
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">{{ form.name.label_tag }} {{ form.name }}</div>
+            <div class="col-md-6">{{ form.icon.label_tag }} {{ form.icon }}</div>
+            <div class="col-12">{{ form.description.label_tag }} {{ form.description }}</div>
+            <div class="col-12">{{ form.link.label_tag }} {{ form.link }}</div>
+          </div>
+          <button type="submit" name="create_group" class="btn btn-success rounded-pill px-4 mt-3">
+            <i class="fas fa-save me-1"></i>Save Group
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ GROUPS TABLE -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h5 class="fw-bold text-success mb-3">
+        <i class="fas fa-list me-2"></i>Existing Groups
+      </h5>
+
+      <table class="table table-hover align-middle text-center">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Link</th>
+            <th>Icon</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in groups %}
+          <tr>
+            <td class="fw-bold">{{ group.name }}</td>
+            <td>{{ group.description }}</td>
+            <td>
+              <a href="{{ group.link }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill">
+                <i class="fab fa-whatsapp me-1"></i>Join
+              </a>
+            </td>
+            <td><i class="fas {{ group.icon }} text-success fs-5"></i></td>
+            <td>
+              <!-- Edit -->
+              <button type="button"
+                      class="btn btn-outline-success btn-sm rounded-circle edit-btn"
+                      data-id="{{ group.id }}"
+                      data-name="{{ group.name }}"
+                      data-description="{{ group.description }}"
+                      data-link="{{ group.link }}"
+                      data-icon="{{ group.icon }}"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editModal">
+                <i class="fas fa-edit"></i>
+              </button>
+
+              <!-- Delete -->
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" value="{{ group.id }}">
+                <button type="submit" name="delete_group" class="btn btn-outline-danger btn-sm rounded-circle">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-muted py-4">
+              <i class="fas fa-circle-info me-2"></i>No groups available yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ EDIT MODAL -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header text-white">
+        <h5 class="modal-title d-flex align-items-center">
+          <i class="fas fa-edit me-2"></i>Edit WhatsApp Group
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body bg-light">
+        <form method="post" id="editForm">
+          {% csrf_token %}
+          <input type="hidden" name="group_id" id="edit-group-id">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Name</label>
+            <input type="text" name="name" id="edit-name" class="form-control rounded-pill" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Description</label>
+            <textarea name="description" id="edit-description" class="form-control rounded-3" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Link</label>
+            <input type="url" name="link" id="edit-link" class="form-control rounded-pill">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Icon (Font Awesome class)</label>
+            <input type="text" name="icon" id="edit-icon" class="form-control rounded-pill" placeholder="e.g. fa-users">
+          </div>
+          <button type="submit" name="update_group" class="btn btn-success w-100 rounded-pill">
+            <i class="fas fa-check-circle me-1"></i>Update Group
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ JS Prefill for Edit -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.edit-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      document.getElementById('edit-group-id').value = button.dataset.id;
+      document.getElementById('edit-name').value = button.dataset.name;
+      document.getElementById('edit-description').value = button.dataset.description;
+      document.getElementById('edit-link').value = button.dataset.link;
+      document.getElementById('edit-icon').value = button.dataset.icon;
+    });
+  });
+});
+</script>
+{% endblock %}

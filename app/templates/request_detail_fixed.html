@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block title %}Transcript Request - {{ transcript_request.reference_code }}{% endblock %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+/* === General Card Styling === */
+.card {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* Card headers */
+.card-header {
+  font-weight: 600;
+  font-size: 1rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Badges */
+.badge {
+  font-size: 0.85rem;
+  padding: 0.45em 0.7em;
+}
+
+/* Timeline */
+.timeline li {
+  position: relative;
+  padding-left: 50px;
+  margin-bottom: 20px;
+}
+.timeline li::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  background-color: #0d6efd;
+  border-radius: 50%;
+}
+.timeline li::after {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 14px;
+  bottom: -6px;
+  width: 2px;
+  background-color: #dee2e6;
+}
+
+/* Definition list styling */
+dl.row dt {
+  font-weight: 500;
+}
+dl.row dd {
+  margin-bottom: 0.5rem;
+}
+
+/* Pay Now Button */
+.button {
+  position: relative;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
+  padding-block: 0.6rem;
+  padding-inline: 1.5rem;
+  background-color: rgb(0, 107, 179);
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  gap: 10px;
+  font-weight: bold;
+  border: 3px solid #ffffff4d;
+  outline: none;
+  overflow: hidden;
+  font-size: 15px;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  transition: all 0.3s ease-in-out;
+}
+
+.button:hover {
+  transform: scale(1.05);
+  border-color: #fff9;
+}
+
+.button:hover .icon {
+  transform: translate(4px);
+}
+
+.button:hover::before {
+  animation: shine 1.5s ease-out infinite;
+}
+
+.button::before {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100%;
+  background-image: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0) 70%
+  );
+  top: 0;
+  left: -100px;
+  opacity: 0.6;
+}
+
+@keyframes shine {
+  0% { left: -100px; }
+  60% { left: 100%; }
+  100% { left: 100%; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .timeline li {
+    padding-left: 40px;
+  }
+  .timeline li::before {
+    left: 12px;
+  }
+  .timeline li::after {
+    left: 18px;
+  }
+  .button {
+    width: 100%;
+  }
+}
+</style>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-xl-10 col-lg-11">
+
+      <!-- Page Header -->
+      <div class="d-flex flex-column flex-md-row align-items-start gap-3 mb-4">
+        <div>
+          <h3 class="mb-1">Transcript Request</h3>
+          <small class="text-muted">Reference: <strong class="text-primary">{{ transcript_request.reference_code }}</strong></small>
+        </div>
+        <div class="ms-auto mt-2 mt-md-0">
+          <small class="text-muted">Requested: {{ transcript_request.date_requested|date:"M d, Y H:i" }}</small>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Left Column: Student & Status -->
+        <div class="col-lg-7">
+
+          <!-- Student Info Card -->
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="fw-bold">{{ transcript_request.student.name }}</h5>
+              <p class="text-muted mb-1">Index: {{ transcript_request.student.index_number }} • Program: {{ transcript_request.student.program.name }}</p>
+
+              <div class="row g-2 mt-3">
+                <div class="col-6">
+                  <small class="text-muted">Department</small>
+                  <div class="fw-semibold">{{ transcript_request.student.department.department }}</div>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Transcript Type</small>
+                  <div>
+                    <span class="badge {% if transcript_request.transcript_type == 'official' %}bg-success{% else %}bg-info{% endif %}">
+                      {{ transcript_request.get_transcript_type_display }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="col-6 mt-2">
+                  <small class="text-muted">School Fees Status</small>
+                  <div>
+                    {% if transcript_request.fee_clearance %}
+                      {% if transcript_request.fee_clearance.cleared and not transcript_request.fee_clearance.owes %}
+                        <span class="badge bg-success">Cleared</span>
+                      {% elif transcript_request.fee_clearance.owes %}
+                        <span class="badge bg-warning text-dark">Owes Fees</span>
+                      {% else %}
+                        <span class="badge bg-info">Under Review</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="badge bg-secondary">N/A</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-6 mt-2">
+                  <small class="text-muted">Transcript Request Fee</small>
+                  <div class="fw-semibold">GHS {{ transcript_request.amount }}</div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <hr>
+              <div class="d-flex flex-wrap gap-2">
+                {% if is_student_user %}
+                  <a href="{% url 'request_transcript' %}" class="btn btn-outline-secondary btn-sm">New Request</a>
+                {% endif %}
+                {% if not transcript_request.payment_made %}
+                  <form id="paymentForm" method="POST" style="display:none;">
+                    {% csrf_token %}
+                    <input type="hidden" name="reference" id="referenceField">
+                  </form>
+                {% endif %}
+                {% if show_update_status %}
+                  <a href="{% url 'update_status' transcript_request.id %}" class="btn btn-primary btn-sm">Update Status</a>
+                {% endif %}
+                {% if can_download_invoice %}
+                  <a href="{% url 'download_invoice' transcript_request.id %}" class="btn btn-outline-info btn-sm">Download Invoice</a>
+                {% endif %}
+                {% if transcript_approved %}
+                  <a href="{% url 'student_download_transcript' transcript_request.id %}" class="btn btn-success btn-sm">Download Transcript</a>
+                {% endif %}
+                {% if staff_role == 'exams_office' or staff_role == 'registrar' %}
+                  <a href="{% url 'generate_transcript_preview' transcript_request.id %}" target="_blank" class="btn btn-outline-secondary btn-sm">Preview</a>
+                {% endif %}
+                {% if staff_role == 'registrar' and transcript_request.transcript_type == 'unofficial' %}
+                  <a href="{% url 'change_faculty_registrar' transcript_request.id %}" class="btn btn-warning btn-sm">
+                    <i class="fas fa-exchange-alt me-1"></i>Change Faculty
+                  </a>
+                {% endif %}
+                {% if staff_role == 'registrar' %}
+                  <a href="{% url 'registrar_approve_disapprove' transcript_request.id %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-gavel me-1"></i>Approve/Disapprove
+                  </a>
+                
+                  <a href="{% url 'registrar_upload_transcript' transcript_request.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-upload me-1"></i>Upload & Process
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Status History Card -->
+          <div class="card">
+            <div class="card-header">
+              Status History
+            </div>
+            <div class="card-body p-3">
+              <ul class="timeline list-unstyled mb-0">
+                {% for s in statuses %}
+                <li>
+                  <div class="fw-semibold">{{ s.get_stage_display }}</div>
+                  <small class="text-muted">{{ s.updated_on|date:"M d, Y H:i" }} by <strong>{{ s.updated_by }}</strong></small>
+                  {% if s.remarks %}
+                    <div class="text-muted small mt-1">{{ s.remarks }}</div>
+                  {% endif %}
+                </li>
+                {% empty %}
+                <li class="text-muted">No status updates yet.</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Quick Summary & Notes -->
+        <div class="col-lg-5">
+          <!-- Quick Summary Card -->
+          <div class="card mb-3">
+            <div class="card-header">Quick Summary</div>
+            <div class="card-body">
+              <dl class="row small mb-0">
+                <dt class="col-6 text-muted">Reference</dt><dd class="col-6">{{ transcript_request.reference_code }}</dd>
+                <dt class="col-6 text-muted">Requested</dt><dd class="col-6">{{ transcript_request.date_requested|date:"M d, Y H:i" }}</dd>
+                <dt class="col-6 text-muted">Status</dt>
+                <dd class="col-6">
+                  {% with latest=transcript_request.statuses.first %}
+                    {% if latest %}
+                      <span class="badge bg-info">{{ latest.get_stage_display }}</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                  {% endwith %}
+                </dd>
+                <dt class="col-6 text-muted">Student Email</dt>
+                <dd class="col-6 small text-muted">{% if transcript_request.student.user %}{{ transcript_request.student.user.email }}{% else %}-{% endif %}</dd>
+                {% if transcript_request.transcript_type == 'unofficial' and transcript_request.selected_faculty_registrar %}
+                <dt class="col-6 text-muted">Faculty Registrar</dt>
+                <dd class="col-6">{{ transcript_request.selected_faculty_registrar.name }} - {{ transcript_request.selected_faculty_registrar.faculty_name }}</dd>
+                {% endif %}
+                <dt class="col-6 text-muted">Transcript Request Fee</dt><dd class="col-6">GHS {{ transcript_request.amount }}</dd>
+              </dl>
+            </div>
+          </div>
+
+          <!-- Notes Card -->
+          <div class="card">
+            <div class="card-header">Notes</div>
+            <div class="card-body small text-muted">
+              {% if transcript_request.fee_clearance and transcript_request.fee_clearance.remarks %}
+                <div><strong>Accounts:</strong> {{ transcript_request.fee_clearance.remarks }}</div>
+              {% else %}
+                <div>No additional notes.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

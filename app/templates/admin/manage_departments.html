@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="admin-container">
+
+  <h2 class="page-title">
+    <i class="fa fa-sitemap me-2"></i> Manage Departments
+  </h2>
+
+  <!-- === ADD DEPARTMENT FORM === -->
+  <section class="card-section">
+    <div class="card-header">
+      <h3><i class="fa fa-plus-circle me-2"></i> Add New Department</h3>
+    </div>
+
+    <form method="post" class="department-form">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div>
+          <label>Department Name</label>
+          {{ form.department }}
+        </div>
+        <div>
+          <label>Head of Department</label>
+          {{ form.HoD }}
+        </div>
+      </div>
+      <button type="submit" name="create_department" class="btn-main">
+        <i class="fa fa-check-circle me-1"></i> Add Department
+      </button>
+    </form>
+  </section>
+
+  <!-- === EXISTING DEPARTMENTS TABLE === -->
+  <section class="card-section">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3><i class="fa fa-list me-2"></i> Existing Departments</h3>
+    </div>
+
+    {% if departments %}
+    <div class="table-container">
+      <table class="table-modern">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Department</th>
+            <th>Head of Department</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dep in departments %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ dep.department }}</td>
+            <td>{{ dep.HoD }}</td>
+            <td class="text-center">
+              <!-- Edit Button -->
+              <button class="btn-icon edit" data-bs-toggle="modal" data-bs-target="#editModal{{ dep.id }}">
+                <i class="fa fa-pen"></i>
+              </button>
+
+              <!-- Delete Button -->
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="dep_id" value="{{ dep.id }}">
+                <button type="submit" name="delete_department" class="btn-icon delete" onclick="return confirm('Delete this department?');">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+
+          <!-- Edit Modal -->
+          <div class="modal fade" id="editModal{{ dep.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content rounded-3 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                  <h5 class="modal-title">
+                    <i class="fa fa-edit me-2"></i>Edit Department
+                  </h5>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post">
+                  {% csrf_token %}
+                  <div class="modal-body">
+                    <input type="hidden" name="dep_id" value="{{ dep.id }}">
+                    <div class="mb-3">
+                      <label>Department Name</label>
+                      <input type="text" name="department" value="{{ dep.department }}" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                      <label>Head of Department</label>
+                      <input type="text" name="HoD" value="{{ dep.HoD }}" class="form-control" required>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="update_department" class="btn btn-success">
+                      <i class="fa fa-save me-1"></i> Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">No departments added yet.</p>
+    {% endif %}
+  </section>
+
+</div>
+
+<!-- ====================== STYLE ====================== -->
+<style>
+:root {
+  --bg: #f9fafc;
+  --card-bg: #fff;
+  --accent: #2563eb;
+  --accent-dark: #1e4ed8;
+  --danger: #dc2626;
+  --text: #1e293b;
+  --muted: #6b7280;
+  --radius: 14px;
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+body {
+  background: var(--bg);
+}
+
+.admin-container {
+  max-width: 1000px;
+  margin: 50px auto;
+  padding: 0 20px;
+  font-family: "Poppins", "Inter", sans-serif;
+  color: var(--text);
+}
+
+.page-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 35px;
+  color: var(--accent-dark);
+}
+
+/* ====== CARD ====== */
+.card-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 25px 30px;
+  margin-bottom: 35px;
+  transition: all 0.3s ease;
+}
+
+.card-header h3 {
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin: 0;
+  color: var(--text);
+}
+
+/* ====== FORM ====== */
+.department-form {
+  margin-top: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.department-form label {
+  font-weight: 600;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.department-form input,
+.department-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.department-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+
+.btn-main {
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  margin-top: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-main:hover {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+}
+
+/* ====== TABLE ====== */
+.table-container {
+  overflow-x: auto;
+}
+
+.table-modern {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 15px;
+}
+
+.table-modern th,
+.table-modern td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table-modern th {
+  background: #f3f4f6;
+  color: var(--text);
+  text-align: left;
+  font-weight: 600;
+}
+
+.table-modern tr:hover {
+  background: #f9fafc;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* ====== ICON BUTTONS ====== */
+.btn-icon {
+  border: none;
+  background: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin: 0 4px;
+  transition: 0.3s;
+}
+
+.btn-icon.edit i {
+  color: var(--accent);
+}
+
+.btn-icon.delete i {
+  color: var(--danger);
+}
+
+.btn-icon:hover {
+  transform: scale(1.1);
+}
+
+/* ====== EMPTY STATE ====== */
+.empty {
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Pay Outstanding Fees</h3>
+  <p>
+    Reference: <strong>{{ reference }}</strong><br>
+    Amount Due: <strong>{{ amount }}</strong>
+  </p>
+
+  <button id="payBtn" class="btn btn-primary">Pay Now (MoMo or Card)</button>
+
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <script>
+    function launchPaystack() {
+      var handler = PaystackPop.setup({
+        key: '{{ paystack_public_key }}',
+        email: '{{ payer_email }}',
+        amount: parseInt({{ amount }} * 100), // pesewas
+        ref: '{{ payment_ref }}',
+        currency: 'GHS',
+        channels: ['mobile_money', 'card'],
+        metadata: { custom_fields: [ { display_name: 'phone', variable_name: 'phone', value: '{{ payer_phone }}' } ] },
+        callback: function(response){
+          // Notify our backend webhook
+          fetch('{{ callback_url }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reference: response.reference, original_reference: '{{ reference }}', status: 'success', amount: '{{ amount }}' })
+          }).then(function(){ window.location.href = '/'; });
+        },
+        onClose: function(){
+          alert('Payment window closed');
+        }
+      });
+      handler.openIframe();
+    }
+    document.getElementById('payBtn').addEventListener('click', function(){
+      launchPaystack();
+    });
+  </script>
+</div>
+{% endblock %}
+
+

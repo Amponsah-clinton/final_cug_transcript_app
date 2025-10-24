@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  /* ===== Modern Button Styles ===== */
+  .btn-modern {
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: all 0.25s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  }
+
+  .btn-modern i {
+    margin-right: 8px;
+  }
+
+  /* Approve Button */
+  .btn-approve {
+    background: linear-gradient(90deg, #00c853, #00e676);
+    color: white;
+  }
+  .btn-approve:hover {
+    background: linear-gradient(90deg, #00b34d, #00d86b);
+    box-shadow: 0 5px 12px rgba(0, 200, 83, 0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Disapprove Button */
+  .btn-disapprove {
+    background: linear-gradient(90deg, #ff1744, #ff5252);
+    color: white;
+  }
+  .btn-disapprove:hover {
+    background: linear-gradient(90deg, #e0143e, #ff3b3b);
+    box-shadow: 0 5px 12px rgba(255, 23, 68, 0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Back Button */
+  .btn-back {
+    background: white;
+    border: 2px solid #6c757d;
+    color: #6c757d;
+  }
+  .btn-back:hover {
+    background: #6c757d;
+    color: white;
+    box-shadow: 0 5px 12px rgba(108,117,125,0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Button layout */
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-start;
+    margin-top: 1rem;
+  }
+</style>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+          <i class="fas fa-graduation-cap me-2"></i>
+          <h5 class="mb-0">Exams Office – Approve/Disapprove Transcript</h5>
+        </div>
+        <div class="card-body">
+          
+          <!-- Student Information -->
+          <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <h6 class="text-muted">Student Information</h6>
+              <p class="mb-1"><strong>Name:</strong> {{ transcript_request.student.name }}</p>
+              <p class="mb-1"><strong>Index Number:</strong> {{ transcript_request.student.index_number }}</p>
+              <p class="mb-1"><strong>Program:</strong> {{ transcript_request.student.program.name }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6 class="text-muted">Request Details</h6>
+              <p class="mb-1"><strong>Reference:</strong> {{ transcript_request.reference_code }}</p>
+              <p class="mb-1"><strong>Type:</strong> {{ transcript_request.get_transcript_type_display }}</p>
+              <p class="mb-1"><strong>Date Requested:</strong> {{ transcript_request.date_requested|date:"M d, Y H:i" }}</p>
+            </div>
+          </div>
+
+          <!-- Current Status -->
+          <div class="alert alert-info">
+            <h6 class="alert-heading">Current Status</h6>
+            {% if current_approval %}
+              {% if current_approval.approved %}
+                <span class="badge bg-success">Approved</span>
+                <small class="text-muted d-block mt-1">by {{ current_approval.approved_by }} on {{ current_approval.date_approved|date:"M d, Y H:i" }}</small>
+              {% else %}
+                <span class="badge bg-danger">Disapproved</span>
+                <small class="text-muted d-block mt-1">by {{ current_approval.approved_by }} on {{ current_approval.date_approved|date:"M d, Y H:i" }}</small>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-warning text-dark">Pending Review</span>
+            {% endif %}
+          </div>
+
+          <!-- Action Form -->
+          <form method="post" class="mb-4">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="remarks" class="form-label fw-semibold">Remarks</label>
+              <textarea name="remarks" id="remarks" class="form-control" rows="3" placeholder="Enter remarks for this action...">{{ current_approval.remarks|default:"" }}</textarea>
+            </div>
+
+            <div class="action-buttons">
+              {% if is_disapproved %}
+                <button type="submit" name="action" value="approve" class="btn-modern btn-approve">
+                  <i class="fas fa-check"></i> Reapprove & Forward to Registrar
+                </button>
+              {% else %}
+                <button type="submit" name="action" value="approve" class="btn-modern btn-approve">
+                  <i class="fas fa-check"></i> Approve & Forward to Registrar
+                </button>
+                <button type="submit" name="action" value="disapprove" class="btn-modern btn-disapprove">
+                  <i class="fas fa-times"></i> Disapprove
+                </button>
+              {% endif %}
+              <a href="{% url 'request_detail' transcript_request.id %}" class="btn-modern btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Details
+              </a>
+            </div>
+          </form>
+
+          <!-- Approval History -->
+          {% if approval_history %}
+          <div class="mt-4">
+            <h6 class="text-muted">Approval History</h6>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Action</th>
+                    <th>By</th>
+                    <th>Date</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for history in approval_history %}
+                  <tr>
+                    <td>
+                      {% if history.action == 'approved' %}
+                        <span class="badge bg-success">Approved</span>
+                      {% elif history.action == 'disapproved' %}
+                        <span class="badge bg-danger">Disapproved</span>
+                      {% elif history.action == 'reapproved' %}
+                        <span class="badge bg-info">Re-approved</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ history.approved_by }}</td>
+                    <td>{{ history.date_action|date:"M d, Y H:i" }}</td>
+                    <td>{{ history.remarks|default:"No remarks" }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const disapproveBtn = document.querySelector('button[name="action"][value="disapprove"]');
+  if (disapproveBtn) {
+    disapproveBtn.addEventListener('click', function(e) {
+      if (!confirm('Are you sure you want to disapprove this transcript? This action cannot be undone.')) {
+        e.preventDefault();
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

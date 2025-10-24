@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Payment Verification{% endblock %}
+{% block content %}
+<div class="card shadow-sm p-4">
+  <h4 class="text-primary mb-3">Update Payment for {{ transcript_request.reference_code }}</h4>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </form>
+</div>
+{% endblock %}

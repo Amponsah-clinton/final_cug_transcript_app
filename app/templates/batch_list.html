@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Batches Removed{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="alert alert-info">
+    <h4 class="alert-heading">Transcript batches removed</h4>
+    <p>The transcript batching UI has been removed. The Registrar now works on individual requests via the staff dashboard.</p>
+    <hr>
+    <a href="{% url 'staff_dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

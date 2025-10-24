@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <h4 class="mb-3">Exams Office Manual Upload</h4>
+          <p class="text-muted mb-4">Upload transcript manually. This will be forwarded to registrar for final approval.</p>
+
+          <form method="post" enctype="multipart/form-data" id="examsOfficeUploadForm">
+            {% csrf_token %}
+
+            <!-- Student picker -->
+            <div class="mb-3">
+              <label class="form-label">Search Student (name or index)</label>
+              <input type="text" id="studentSearch" class="form-control" placeholder="Type name or index to search..." autocomplete="off">
+              <div id="studentResults" class="list-group mt-1" style="position:relative;z-index:50;"></div>
+              <input type="hidden" name="student_index" id="studentIndexField">
+            </div>
+
+            <!-- display chosen student -->
+            <div id="chosenStudent" class="mb-3 d-none">
+              <div class="p-2 border rounded bg-light">
+                <strong id="chosenName"></strong><br>
+                <small class="text-muted">Index: <span id="chosenIndex"></span></small>
+              </div>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label">Transcript Type</label>
+                {{ form.transcript_type }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Faculty Registrar (Unofficial)</label>
+                {{ form.faculty_registrar }}
+              </div>
+            </div>
+
+            <div class="row g-2 mt-3">
+              <div class="col-md-12">
+                <label class="form-label">Upload PDF</label>
+                {{ form.transcript_file }}
+              </div>
+            </div>
+
+            <div class="row g-2 mt-3">
+              <div class="col-md-12">
+                <label class="form-label">Remarks for Registrar</label>
+                {{ form.remarks }}
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-end">
+              <a href="{% url 'staff_dashboard' %}" class="btn btn-outline-secondary me-2">Cancel</a>
+              <button class="btn btn-primary" id="submitBtn">Upload & Forward to Registrar</button>
+            </div>
+            
+            <!-- Preview section (hidden initially) -->
+            <div id="previewSection" class="mt-4 d-none">
+              <div class="alert alert-info">
+                <h6 class="alert-heading">Preview Transcript</h6>
+                <p class="mb-2">After uploading, you can preview the generated transcript:</p>
+                <a href="#" id="previewLink" target="_blank" class="btn btn-outline-primary btn-sm">
+                  <i class="fas fa-eye me-1"></i>Preview Transcript
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// small helper to add class to rendered widget if missing
+document.addEventListener('DOMContentLoaded', function(){
+  const search = document.getElementById('studentSearch');
+  const resBox = document.getElementById('studentResults');
+  const idxField = document.getElementById('studentIndexField');
+  const chosen = document.getElementById('chosenStudent');
+  const chosenName = document.getElementById('chosenName');
+  const chosenIndex = document.getElementById('chosenIndex');
+
+  let timer = null;
+  search.addEventListener('input', function(){
+    const q = this.value.trim();
+    idxField.value = '';
+    chosen.classList.add('d-none');
+    if(timer) clearTimeout(timer);
+    if(q.length < 2){ resBox.innerHTML = ''; return; }
+    timer = setTimeout(()=>{
+      fetch('{% url "ajax_student_search" %}?q=' + encodeURIComponent(q))
+        .then(r=>r.json())
+        .then(data=>{
+          resBox.innerHTML = '';
+          (data.results||[]).forEach(s=>{
+            const a = document.createElement('button');
+            a.type = 'button';
+            a.className = 'list-group-item list-group-item-action';
+            a.textContent = s.name + ' — ' + s.index_number;
+            a.dataset.index = s.index_number;
+            a.dataset.name = s.name;
+            a.addEventListener('click', function(){
+              idxField.value = this.dataset.index;
+              chosenName.textContent = this.dataset.name;
+              chosenIndex.textContent = this.dataset.index;
+              chosen.classList.remove('d-none');
+              resBox.innerHTML = '';
+              search.value = this.dataset.name + ' (' + this.dataset.index + ')';
+            });
+            resBox.appendChild(a);
+          });
+        }).catch(()=>{ resBox.innerHTML = ''; });
+    }, 250);
+  });
+
+  // Hide faculty when official selected
+  const typeSel = document.querySelector('select[name="transcript_type"]');
+  const facultySel = document.querySelector('select[name="faculty_registrar"]');
+  function toggleFaculty(){
+    if(typeSel && facultySel){
+      const container = facultySel.closest('.col-md-6');
+      if(typeSel.value === 'unofficial'){
+        if(container) container.style.display = '';
+      } else {
+        if(container) container.style.display = 'none';
+      }
+    }
+  }
+  toggleFaculty();
+  if(typeSel) typeSel.addEventListener('change', toggleFaculty);
+});
+</script>
+
+{% endblock %}

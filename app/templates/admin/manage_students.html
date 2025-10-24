@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="admin-wrapper py-5">
+  <div class="container">
+    <h2 class="admin-title mb-4"><i class="fa fa-users"></i> Manage Students</h2>
+
+    <!-- ==== FILTER FORM ==== -->
+    <form method="get" class="row g-3 mb-4 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Filter by Department</label>
+        <select name="department" class="form-select">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+            <option value="{{ dept.id }}" {% if dept.id|stringformat:"s" == selected_department %}selected{% endif %}>
+              {{ dept.department }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Filter by Program</label>
+        <select name="program" class="form-select">
+          <option value="">All Programs</option>
+          {% for prog in programs %}
+            <option value="{{ prog.id }}" {% if prog.id|stringformat:"s" == selected_program %}selected{% endif %}>
+              {{ prog.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-4">
+   <button type="submit" class="btn-filter">
+  <i class="fa fa-filter"></i> Apply Filters
+</button>
+<style>
+.btn-filter {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  transition: all 0.25s ease;
+}
+
+.btn-filter i {
+  font-size: 0.95rem;
+}
+
+.btn-filter:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-filter:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+</style>
+
+      </div>
+    </form>
+
+    <!-- ==== STUDENT TABLE ==== -->
+    {% if students %}
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table align-middle table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Index No</th>
+                <th>Full Name</th>
+                <th>Program</th>
+                <th>Department</th>
+                <th>Email</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ s.index_number }}</td>
+                <td>{{ s.full_name }}</td>
+                <td>{{ s.program.name }}</td>
+                <td>{{ s.department.department }}</td>
+                <td>{{ s.email|default:"—" }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary me-1"
+                          data-bs-toggle="modal"
+                          data-bs-target="#detailsModal{{ s.id }}">
+                    <i class="fa fa-eye"></i> Details
+                  </button>
+                  <button class="btn btn-sm btn-outline-success"
+                          data-bs-toggle="modal"
+                          data-bs-target="#progressModal{{ s.id }}">
+                    <i class="fa fa-file-alt"></i> Progress
+                  </button>
+                </td>
+              </tr>
+
+              <!-- === STUDENT DETAILS MODAL === -->
+              <div class="modal fade" id="detailsModal{{ s.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                  <div class="modal-content rounded-4">
+                    <div class="modal-header bg-primary text-white">
+                      <h5 class="modal-title"><i class="fa fa-user-circle"></i> {{ s.full_name }}</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <p><strong>Index Number:</strong> {{ s.index_number }}</p>
+                          <p><strong>Email:</strong> {{ s.email }}</p>
+                          <p><strong>Phone:</strong> {{ s.phone|default:"—" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                          <p><strong>Program:</strong> {{ s.program.name }}</p>
+                          <p><strong>Department:</strong> {{ s.department.department }}</p>
+                          <p><strong>Gender:</strong> {{ s.gender|default:"—" }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- === TRANSCRIPT PROGRESS MODAL === -->
+              <div class="modal fade" id="progressModal{{ s.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                  <div class="modal-content rounded-4">
+                    <div class="modal-header bg-success text-white">
+                      <h5 class="modal-title"><i class="fa fa-file-alt"></i> Transcript Progress</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      {% with transcript_data.s.id as transcripts %}
+                        {% if transcripts %}
+                          <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                              <tr>
+                                <th>#</th>
+                                <th>Date Requested</th>
+                                <th>Type</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for t in transcripts %}
+                              <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ t.date_requested|date:"M d, Y" }}</td>
+                                <td>{{ t.transcript_type|default:"—" }}</td>
+                                <td>{{ t.payment_made|yesno:"Paid,Unpaid" }}</td>
+                                <td>
+                                  {% if t.statuses.last %}
+                                    {{ t.statuses.last.status }}
+                                  {% else %}
+                                    <em>No Status Yet</em>
+                                  {% endif %}
+                                </td>
+                              </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        {% else %}
+                          <p class="text-muted text-center my-3">No transcript requests found.</p>
+                        {% endif %}
+                      {% endwith %}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% else %}
+      <p class="text-center text-muted">No students found.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ==== STYLES ==== -->
+<style>
+.admin-wrapper {
+  font-family: "Poppins", sans-serif;
+}
+
+.admin-title {
+  font-weight: 600;
+  color: #1e293b;
+  border-left: 5px solid #2563eb;
+  padding-left: 12px;
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.btn {
+  border-radius: 8px;
+}
+
+.modal-content {
+  border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+select.form-select {
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.btn-primary {
+  border-radius: 10px;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f1f5ff;
+}
+
+.table td, .table th {
+  vertical-align: middle;
+}
+</style>
+{% endblock %}

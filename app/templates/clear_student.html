@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block title %}Fee Clearance Verification{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f8fafc;
+}
+
+.uni-card {
+  background: #fff;
+  border: none;
+  border-radius: 1.25rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.uni-card:hover {
+  transform: translateY(-4px);
+}
+
+.uni-header {
+  background: linear-gradient(135deg, #004aad, #007bff);
+  color: white;
+  border-radius: 1.25rem 1.25rem 0 0;
+  padding: 1.75rem;
+  text-align: center;
+}
+
+.uni-header h4 {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.uni-body {
+  padding: 2rem 2.25rem;
+}
+
+.uni-form label {
+  font-weight: 600;
+  color: #344054;
+}
+
+.uni-form .form-control, .form-check-input {
+  border-radius: 0.75rem;
+  border-color: #d0d5dd;
+}
+
+.uni-form .btn {
+  border-radius: 0.75rem;
+  padding: 0.7rem 1.6rem;
+  font-weight: 500;
+}
+
+.uni-btn-primary {
+  background: linear-gradient(135deg, #0056d2, #007bff);
+  border: none;
+}
+
+.uni-btn-primary:hover {
+  background: linear-gradient(135deg, #004aad, #005ed9);
+}
+
+.uni-btn-outline {
+  border: 1px solid #d0d5dd;
+  color: #344054;
+}
+
+.uni-btn-outline:hover {
+  background: #f1f5f9;
+}
+
+.alert {
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+}
+</style>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="uni-card">
+        <div class="uni-header">
+          <h4>Fee Clearance Verification</h4>
+        </div>
+
+        <div class="uni-body">
+          <h6 class="text-secondary mb-4">
+            Reference Code: 
+            <span class="fw-semibold text-dark">{{ transcript_request.reference_code }}</span>
+          </h6>
+
+          {% if transcript_request.transcript_type == 'unofficial' %}
+          <!-- UNOFFICIAL TRANSCRIPT SECTION -->
+          <form method="post" class="uni-form">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label">Remarks (Optional)</label>
+              <textarea name="remarks" class="form-control" rows="3" placeholder="Enter remarks..."></textarea>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+              <a href="{% url 'staff_dashboard' %}" class="btn uni-btn-outline">Cancel</a>
+              <button style="color: #f1f5f9 !important;" type="submit" name="action" value="forward_exams" class="btn uni-btn-primary">Forward to Exams Office</button>
+            </div>
+          </form>
+
+          {% else %}
+          <!-- OFFICIAL TRANSCRIPT SECTION -->
+          {% if verify_mode %}
+          <div class="alert alert-info">
+            <strong>Online Payment Detected:</strong> This request has been successfully logged in the system.
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="reject">
+              <button type="submit" class="btn btn-outline-danger">Disprove Payment</button>
+            </form>
+
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="approve">
+              <button type="submit" class="btn btn-success">Verify & Forward to Registrar</button>
+            </form>
+          </div>
+
+          {% else %}
+          <form method="post" id="feeForm" enctype="multipart/form-data" class="uni-form needs-validation" novalidate>
+            {% csrf_token %}
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-check">
+                  {{ form.cleared }}
+                  <label class="form-check-label" for="{{ form.cleared.id_for_label }}">
+                    Student is cleared (no fees owed)
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  {{ form.owes }}
+                  <label class="form-check-label" for="{{ form.owes.id_for_label }}">
+                    Student owes fees
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div id="amountField" class="mb-3" style="display: none;">
+              <label class="form-label">Amount Owed (GHS)</label>
+              {{ form.amount_owed }}
+            </div>
+
+            <div id="invoiceField" class="mb-3" style="display: none;">
+              <label class="form-label">Attach Invoice / Letter (Optional)</label>
+              {{ form.invoice_file }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Remarks</label>
+              {{ form.remarks }}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <a href="{% url 'staff_dashboard' %}" class="btn uni-btn-outline">Cancel</a>
+              <button style="color: white !important;" type="submit" class="btn uni-btn-primary">Submit</button>
+            </div>
+          </form>
+          {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const cleared = document.getElementById('{{ form.cleared.id_for_label }}');
+  const owes = document.getElementById('{{ form.owes.id_for_label }}');
+  const amountField = document.getElementById('amountField');
+  const invoiceField = document.getElementById('invoiceField');
+  const amountInput = amountField?.querySelector('input');
+
+  function toggleFields() {
+    if (owes && owes.checked) {
+      amountField.style.display = 'block';
+      invoiceField.style.display = 'block';
+      if (amountInput) amountInput.required = true;
+    } else {
+      amountField.style.display = 'none';
+      invoiceField.style.display = 'none';
+      if (amountInput) {
+        amountInput.required = false;
+        amountInput.value = '';
+      }
+    }
+  }
+
+  if (cleared && owes) {
+    cleared.addEventListener('change', () => {
+      if (cleared.checked) owes.checked = false;
+      toggleFields();
+    });
+    owes.addEventListener('change', () => {
+      if (owes.checked) cleared.checked = false;
+      toggleFields();
+    });
+  }
+
+  toggleFields();
+});
+</script>
+
+{% endblock %}

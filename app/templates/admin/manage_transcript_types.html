@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="admin-wrapper">
+  <h2 class="admin-title">Manage Transcript Types</h2>
+
+  <!-- === ADD NEW TYPE === -->
+  <div class="admin-card">
+    <h3 class="card-title"><i class="fa fa-plus-circle"></i> Add New Transcript Type</h3>
+    <form method="post" class="styled-form">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label for="id_type">Transcript Type</label>
+          {{ form.type }}
+        </div>
+        <div class="form-group">
+          <label for="id_price">Price (GHS)</label>
+          {{ form.price }}
+        </div>
+      </div>
+      <button type="submit" name="create_type" class="btn-primary">+ Add Transcript Type</button>
+    </form>
+  </div>
+
+  <!-- === EXISTING TYPES === -->
+  <div class="admin-card">
+    <h3 class="card-title"><i class="fa fa-list"></i> Existing Transcript Types</h3>
+
+    {% if types %}
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Price (GHS)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in types %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ t.get_type_display }}</td>
+          <td>{{ t.price }}</td>
+          <td>
+            <button class="btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ t.id }}">
+              <i class="fa fa-edit"></i>
+            </button>
+            <form method="post" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="type_id" value="{{ t.id }}">
+              <button type="submit" name="delete_type" class="btn-delete" onclick="return confirm('Delete this transcript type?');">
+                <i class="fa fa-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+
+        <!-- === EDIT MODAL === -->
+        <div class="modal fade" id="editModal{{ t.id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa fa-edit"></i> Edit Price</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                  <input type="hidden" name="type_id" value="{{ t.id }}">
+                  <div class="form-group mb-3">
+                    <label>Transcript Type</label>
+                    <input type="text" value="{{ t.get_type_display }}" class="form-control" readonly>
+                  </div>
+                  <div class="form-group mb-3">
+                    <label>Price (GHS)</label>
+                    <input type="number" step="0.01" name="price" value="{{ t.price }}" class="form-control" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" name="update_type" class="btn btn-success">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No transcript types have been added yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- === STYLING (same as before) === -->
+<style>
+:root {
+  --bg: #f4f6fb;
+  --card: #fff;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --radius: 14px;
+  --shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
+}
+
+.admin-wrapper {
+  max-width: 950px;
+  margin: 50px auto;
+  padding: 10px;
+  font-family: "Poppins", "Inter", sans-serif;
+  color: var(--text);
+}
+
+.admin-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 35px;
+}
+
+.admin-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 30px 35px;
+  margin-bottom: 30px;
+}
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--accent);
+  padding-left: 10px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.btn-edit, .btn-delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-right: 8px;
+}
+
+.btn-edit i { color: var(--accent); }
+.btn-delete i { color: crimson; }
+.btn-edit:hover i, .btn-delete:hover i { transform: scale(1.1); }
+
+.modal-header { background: var(--accent); color: #fff; }
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.modern-table th, .modern-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.modern-table th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.modern-table tr:hover { background: #f1f5f9; }
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  padding: 25px 0;
+}
+</style>
+{% endblock %}

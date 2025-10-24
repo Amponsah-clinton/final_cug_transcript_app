@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.name }}{% endblock %}
+{% block content %}
+<div class="card shadow-sm p-3">
+  <h4 class="text-primary">{{ student.name }}</h4>
+  <p class="text-muted mb-3">Index: {{ student.index_number }} | Department: {{ student.department.department }}</p>
+
+  <div class="d-flex justify-content-between mb-3">
+    <h5 class="fw-semibold">Transcript Requests</h5>
+    <a href="{% url 'request_transcript' %}" class="btn btn-sm btn-primary">New Request</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Type</th>
+          <th>Date</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>{{ req.reference_code }}</td>
+          <td>{{ req.get_transcript_type_display }}</td>
+          <td>{{ req.date_requested|date:"M d, Y H:i" }}</td>
+
+          <td>
+            {% if req.payment_made %}
+              <span class="badge bg-success">Paid</span>
+            {% else %}
+              <span class="badge bg-warning">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if req.statuses.first %}
+              <span class="badge bg-info">{{ req.statuses.first.get_stage_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary">No Status</span>
+            {% endif %}
+          </td>
+          <td><a href="{% url 'request_detail' req.id %}" class="btn btn-sm btn-outline-primary">Details</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted">No transcript requests yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

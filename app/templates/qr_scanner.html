@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}QR Code Scanner - Transcript Verification{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        QR Code Scanner
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Scan the QR code on a transcript to verify its authenticity.
+                    </div>
+
+                    <!-- QR Scanner Interface -->
+                    <div class="text-center mb-4">
+                        <div id="scanner-container" class="border rounded p-4" style="min-height: 300px;">
+                            <div id="scanner-placeholder" class="d-flex flex-column align-items-center justify-content-center h-100">
+                                <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">QR Code Scanner</h5>
+                                <p class="text-muted">Click "Start Scanner" to begin scanning</p>
+                                <button id="start-scanner" class="btn btn-primary">
+                                    <i class="fas fa-play me-2"></i>Start Scanner
+                                </button>
+                            </div>
+                            <video id="scanner-video" style="display: none; width: 100%; height: 300px;"></video>
+                        </div>
+                    </div>
+
+                    <!-- Manual Code Entry -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">Manual Verification</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="manual-verify-form">
+                                <div class="mb-3">
+                                    <label for="verification-code" class="form-label">Verification Code</label>
+                                    <input type="text" class="form-control" id="verification-code" 
+                                           placeholder="Enter verification code from transcript">
+                                </div>
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search me-2"></i>Verify Code
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="verification-results" style="display: none;">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startButton = document.getElementById('start-scanner');
+    const scannerContainer = document.getElementById('scanner-container');
+    const scannerPlaceholder = document.getElementById('scanner-placeholder');
+    const scannerVideo = document.getElementById('scanner-video');
+    const manualForm = document.getElementById('manual-verify-form');
+    const resultsDiv = document.getElementById('verification-results');
+    
+    let scannerActive = false;
+
+    // Start QR Scanner
+    startButton.addEventListener('click', function() {
+        if (scannerActive) return;
+        
+        startButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Scanner...';
+        startButton.disabled = true;
+        
+        // Check for camera support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Camera access not supported in this browser.');
+            resetScanner();
+            return;
+        }
+        
+        navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment' // Use back camera on mobile
+            } 
+        })
+        .then(function(stream) {
+            scannerVideo.srcObject = stream;
+            scannerVideo.style.display = 'block';
+            scannerPlaceholder.style.display = 'none';
+            scannerActive = true;
+            startButton.innerHTML = '<i class="fas fa-stop me-2"></i>Stop Scanner';
+            startButton.disabled = false;
+            startButton.onclick = stopScanner;
+            
+            // Start Quagga for barcode scanning
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: scannerVideo,
+                    constraints: {
+                        width: 640,
+                        height: 480,
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
+                },
+                locate: true,
+                locator: {
+                    patchSize: "medium",
+                    halfSample: true
+                }
+            }, function(err) {
+                if (err) {
+                    console.error('Quagga initialization error:', err);
+                    alert('Failed to initialize scanner: ' + err.message);
+                    resetScanner();
+                    return;
+                }
+                Quagga.start();
+            });
+            
+            Quagga.onDetected(function(result) {
+                const code = result.codeResult.code;
+                console.log('Detected code:', code);
+                verifyCode(code);
+            });
+            
+        })
+        .catch(function(err) {
+            console.error('Camera access error:', err);
+            alert('Failed to access camera: ' + err.message);
+            resetScanner();
+        });
+    });
+    
+    function stopScanner() {
+        if (scannerActive) {
+            Quagga.stop();
+            if (scannerVideo.srcObject) {
+                scannerVideo.srcObject.getTracks().forEach(track => track.stop());
+            }
+            scannerVideo.style.display = 'none';
+            scannerPlaceholder.style.display = 'flex';
+            scannerActive = false;
+            startButton.innerHTML = '<i class="fas fa-play me-2"></i>Start Scanner';
+            startButton.disabled = false;
+            startButton.onclick = startButton.onclick;
+        }
+    }
+    
+    function resetScanner() {
+        startButton.innerHTML = '<i class="fas fa-play me-2"></i>Start Scanner';
+        startButton.disabled = false;
+        startButton.onclick = startButton.onclick;
+    }
+    
+    // Manual verification form
+    manualForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const code = document.getElementById('verification-code').value.trim();
+        if (code) {
+            verifyCode(code);
+        }
+    });
+    
+    // Verify code function
+    function verifyCode(code) {
+        if (scannerActive) {
+            stopScanner();
+        }
+        
+        // Show loading
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                <p>Verifying transcript...</p>
+            </div>
+        `;
+        
+        // Make AJAX request to verify
+        fetch(`/verify/${encodeURIComponent(code)}/`)
+        .then(response => response.text())
+        .then(html => {
+            // Extract the verification result from the response
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const resultContent = doc.querySelector('.card-body') || doc.body;
+            resultsDiv.innerHTML = resultContent.innerHTML;
+        })
+        .catch(error => {
+            console.error('Verification error:', error);
+            resultsDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error verifying transcript: ${error.message}
+                </div>
+            `;
+        });
+    }
+});
+</script>
+{% endblock %}

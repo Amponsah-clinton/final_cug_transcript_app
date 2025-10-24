@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% block title %}Review Batch - {{ batch.batch_id }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Review Batch: {{ batch.batch_id }}</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Batch Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Batch Details</h5>
+                            <p><strong>Created:</strong> {{ batch.created_at|date:"M d, Y H:i" }}</p>
+                            <p><strong>Created by:</strong> {{ batch.created_by.user.get_full_name }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge 
+                                    {% if batch.status == 'pending' %}bg-warning
+                                    {% elif batch.status == 'under_review' %}bg-info
+                                    {% elif batch.status == 'approved' %}bg-success
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ batch.get_status_display }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if batch.notes %}
+                            <h5>Notes</h5>
+                            <p>{{ batch.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Transcripts in Batch -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Batch Items</h5>
+                            <div>
+                                <div class="btn-group" role="group" aria-label="Filter">
+                                    <button type="button" class="btn btn-sm btn-outline-primary active" id="filter-all">All</button>
+                                    <button type="button" class="btn btn-sm btn-outline-success" id="filter-approved">Approved</button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="filter-rejected">Rejected</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive shadow-sm rounded">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr data-approved="{{ selection.is_approved|yesno:'true,false' }}" data-rejected="{{ selection.is_rejected|yesno:'true,false' }}">
+                                        <th>Student Name</th>
+                                        <th>Index Number</th>
+                                        <th>Program</th>
+                                        <th>Transcript Type</th>
+                                        <th>Reference Code</th>
+                                        <th class="d-none d-md-table-cell">Date Requested</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for selection in selections %}
+                                    {% with tr=selection.transcript_request %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ tr.student.name }}</td>
+                                        <td><small class="text-muted">{{ tr.student.index_number }}</small></td>
+                                        <td>{{ tr.student.program.name }}</td>
+                                        <td>
+                                            <span class="badge {% if tr.transcript_type == 'official' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                {{ tr.get_transcript_type_display }}
+                                            </span>
+                                        </td>
+                                        <td><code class="text-muted">{{ tr.reference_code }}</code></td>
+                                        <td class="d-none d-md-table-cell"><small class="text-muted">{{ tr.date_requested|date:"M d, Y" }}</small></td>
+                                        <td class="text-end">
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewTranscript('{{ tr.id }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if selection.is_approved %}
+                                                    <button class="btn btn-sm btn-success" disabled>Approved</button>
+                                                {% elif selection.is_rejected %}
+                                                    <form method="post" style="display:inline-block;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="selection_id" value="{{ selection.id }}" />
+                                                        <button name="action" value="reapprove_one" class="btn btn-sm btn-outline-success">Re-approve</button>
+                                                    </form>
+                                                {% else %}
+                                                    <form method="post" style="display:inline-block;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="selection_id" value="{{ selection.id }}" />
+                                                        <button name="action" value="approve_one" class="btn btn-sm btn-outline-success">Approve</button>
+                                                    </form>
+                                                    <form method="post" style="display:inline-block;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="selection_id" value="{{ selection.id }}" />
+                                                        <button name="action" value="reject_one" class="btn btn-sm btn-outline-danger">Reject</button>
+                                                    </form>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endwith %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <script>
+                        (function(){
+                            const rows = Array.from(document.querySelectorAll('table tbody tr'));
+                            function setFilter(mode){
+                                rows.forEach(r => {
+                                    const isApproved = r.getAttribute('data-approved') === 'true';
+                                    const isRejected = r.getAttribute('data-rejected') === 'true';
+                                    if(mode === 'all') r.style.display = '';
+                                    else if(mode === 'approved') r.style.display = isApproved ? '' : 'none';
+                                    else if(mode === 'rejected') r.style.display = isRejected ? '' : 'none';
+                                });
+                            }
+                            const btnAll = document.getElementById('filter-all');
+                            const btnApproved = document.getElementById('filter-approved');
+                            const btnRejected = document.getElementById('filter-rejected');
+                            if(btnAll && btnApproved && btnRejected){
+                                btnAll.addEventListener('click', function(){ setFilter('all'); btnAll.classList.add('active'); btnApproved.classList.remove('active'); btnRejected.classList.remove('active'); });
+                                btnApproved.addEventListener('click', function(){ setFilter('approved'); btnApproved.classList.add('active'); btnAll.classList.remove('active'); btnRejected.classList.remove('active'); });
+                                btnRejected.addEventListener('click', function(){ setFilter('rejected'); btnRejected.classList.add('active'); btnApproved.classList.remove('active'); btnAll.classList.remove('active'); });
+                            }
+                        })();
+                    </script>
+                    
+                    <!-- Batch Actions and Comments -->
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="viewAllTranscripts()">
+                                        <i class="fas fa-eye"></i> View All Transcripts
+                                    </button>
+                                    <span class="text-muted small align-self-center ms-2">Per-item Approve/Reject controls are available in Actions.</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Review Comments</label>
+                                    {{ form.comments }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Changes Made (if any)</label>
+                                    {{ form.changes_made }}
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'batch_list' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Back to Batches
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transcript Preview Modal (always available) -->
+<div class="modal fade" id="transcriptModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                                    <h5 class="modal-title">Transcript Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                                    <div class="mb-3" id="signatureControls" style="display:none;">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="sigHod">
+                                            <label class="form-check-label" for="sigHod">Head of Department</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="sigRegistrar">
+                                            <label class="form-check-label" for="sigRegistrar">Registrar</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="sigVc">
+                                            <label class="form-check-label" for="sigVc">Vice Chancellor</label>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="saveSignatureFlags()">Save</button>
+                                    </div>
+                                    <div id="transcriptContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Loading transcript...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="downloadTranscript()">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="rb-meta" data-is-registrar="{% if request.user.is_staff and request.user.staffprofile and request.user.staffprofile.role == 'registrar' %}true{% else %}false{% endif %}"></div>
+
+<script>
+let currentTranscriptId = null;
+const isRegistrar = (document.getElementById('rb-meta')?.getAttribute('data-is-registrar') === 'true');
+
+function viewTranscript(transcriptId) {
+    currentTranscriptId = transcriptId;
+    const modal = new bootstrap.Modal(document.getElementById('transcriptModal'));
+    modal.show();
+    
+    // Load transcript preview
+    document.getElementById('transcriptContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading transcript...</p>
+        </div>
+    `;
+    
+    // Show registrar controls if registrar
+    const controls = document.getElementById('signatureControls');
+    if (isRegistrar) {
+        controls.style.display = 'block';
+        // Load current flags
+        fetch(`/transcript-signatures/${transcriptId}/`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('sigHod').checked = !!data.hod;
+                document.getElementById('sigRegistrar').checked = !!data.registrar;
+                document.getElementById('sigVc').checked = !!data.vc;
+            })
+            .catch(() => {});
+    } else if (controls) {
+        controls.style.display = 'none';
+    }
+
+    // Generate transcript preview
+    fetch(`/generate-transcript-preview/${transcriptId}/`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            document.getElementById('transcriptContent').innerHTML = `
+                <iframe src="${url}" width="100%" height="600px" style="border: none;"></iframe>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('transcriptContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error loading transcript: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function viewAllTranscripts() {
+    // Show all transcripts in a list format
+    const modal = new bootstrap.Modal(document.getElementById('transcriptModal'));
+    modal.show();
+    
+    document.getElementById('transcriptContent').innerHTML = `
+        <div class="row">
+            {% for selection in selections %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6>{{ selection.transcript_request.student.name }}</h6>
+                        <p class="text-muted">{{ selection.transcript_request.student.index_number }}</p>
+                        <button class="btn btn-sm btn-primary" 
+                                onclick="viewTranscript('{{ selection.transcript_request.id }}')">
+                            <i class="fas fa-eye"></i> View Transcript
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div data-first-transcript-id="{% if selections %}{{ selections.0.transcript_request.id }}{% endif %}"></div>
+    `;
+
+    // Auto-load first transcript into preview with controls visible
+    const firstIdEl = document.querySelector('[data-first-transcript-id]');
+    const firstId = firstIdEl ? firstIdEl.getAttribute('data-first-transcript-id') : null;
+    if (firstId) {
+        viewTranscript(firstId);
+    }
+}
+
+function downloadTranscript() {
+    if (currentTranscriptId) {
+        window.open(`/generate-transcript-preview/${currentTranscriptId}/`, '_blank');
+    }
+}
+
+function saveSignatureFlags() {
+    if (!isRegistrar || !currentTranscriptId) return;
+    // CSRF helper
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+    const body = JSON.stringify({
+        hod: document.getElementById('sigHod').checked,
+        registrar: document.getElementById('sigRegistrar').checked,
+        vc: document.getElementById('sigVc').checked,
+    });
+    fetch(`/transcript-signatures/${currentTranscriptId}/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+        credentials: 'same-origin',
+        body,
+    }).then(() => {
+        // Refresh preview after save
+        viewTranscript(currentTranscriptId);
+    });
+}
+</script>
+{% endblock %}

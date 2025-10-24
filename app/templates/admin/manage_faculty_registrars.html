@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="admin-wrapper">
+  <h2 class="admin-title">Manage Faculty Registrars</h2>
+
+  <!-- === ADD FORM === -->
+  <div class="admin-card">
+    <h3 class="card-title"><i class="fa fa-user-plus"></i> Add New Registrar</h3>
+    <form method="post" enctype="multipart/form-data" class="styled-form">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label>Registrar Name</label>
+          {{ form.name }}
+        </div>
+        <div class="form-group">
+          <label>Faculty Name</label>
+          {{ form.faculty_name }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Signature</label>
+        {{ form.signature }}
+      </div>
+      <button type="submit" name="create_registrar" class="btn-primary">+ Add Registrar</button>
+    </form>
+  </div>
+
+  <!-- === TABLE === -->
+  <div class="admin-card">
+    <h3 class="card-title"><i class="fa fa-list"></i> Existing Registrars</h3>
+
+    {% if registrars %}
+    <div class="table-wrapper">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Faculty</th>
+            <th>Signature</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for reg in registrars %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ reg.name }}</td>
+            <td>{{ reg.faculty_name }}</td>
+            <td>
+              {% if reg.signature %}
+              <img src="{{ reg.signature.url }}" alt="Signature" class="signature-img">
+              {% else %}
+              <span class="empty">No Signature</span>
+              {% endif %}
+            </td>
+            <td>
+              <button class="btn-edit" data-bs-toggle="modal" data-bs-target="#editModal{{ reg.id }}">
+                <i class="fa fa-edit"></i>
+              </button>
+
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="reg_id" value="{{ reg.id }}">
+                <button type="submit" name="delete_registrar" class="btn-delete" onclick="return confirm('Delete this registrar?');">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+
+          <!-- Edit Modal -->
+          <div class="modal fade" id="editModal{{ reg.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                  <h5 class="modal-title"><i class="fa fa-edit"></i> Edit Registrar</h5>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <div class="modal-body">
+                    <input type="hidden" name="reg_id" value="{{ reg.id }}">
+                    <div class="form-group mb-3">
+                      <label>Name</label>
+                      <input type="text" name="name" value="{{ reg.name }}" class="form-control" required>
+                    </div>
+                    <div class="form-group mb-3">
+                      <label>Faculty Name</label>
+                      <input type="text" name="faculty_name" value="{{ reg.faculty_name }}" class="form-control" required>
+                    </div>
+                    <div class="form-group mb-3">
+                      <label>Replace Signature (optional)</label>
+                      <input type="file" name="signature" class="form-control">
+                      {% if reg.signature %}
+                        <img src="{{ reg.signature.url }}" alt="Signature" class="signature-img mt-2">
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="update_registrar" class="btn btn-success">Save Changes</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty-state">No registrars have been added yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+:root {
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --radius: 14px;
+  --shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
+}
+
+/* === WRAPPER === */
+.admin-wrapper {
+  max-width: 950px;
+  margin: 50px auto;
+  padding: 10px;
+  font-family: "Poppins", "Inter", sans-serif;
+  color: var(--text);
+}
+
+/* === HEADERS === */
+.admin-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 35px;
+}
+
+/* === CARD CONTAINER === */
+.admin-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 30px 35px;
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+}
+
+.admin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+  color: var(--text);
+  border-left: 4px solid var(--accent);
+  padding-left: 10px;
+}
+
+/* === FORM === */
+.styled-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+/* === BUTTONS === */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-top: 10px;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+}
+
+.btn-edit, .btn-delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  margin-right: 10px;
+}
+
+.btn-edit i { color: var(--accent); }
+.btn-delete i { color: crimson; }
+.btn-edit:hover i, .btn-delete:hover i { transform: scale(1.1); }
+
+/* === TABLE === */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.modern-table th, .modern-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.modern-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modern-table tr:hover {
+  background: #f1f5f9;
+  transition: background 0.2s ease;
+}
+
+.signature-img {
+  width: 80px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 4px;
+}
+
+/* === EMPTY STATES === */
+.empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  padding: 25px 0;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card {
+    padding: 25px;
+  }
+
+  .admin-title {
+    font-size: 1.6rem;
+  }
+
+  .signature-img {
+    width: 60px;
+  }
+}
+</style>
+{% endblock %}

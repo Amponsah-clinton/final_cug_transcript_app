@@ -1,0 +1,1520 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+  .dashboard-container {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+  }
+  
+  .dashboard-header {
+    margin-bottom: 2rem;
+  }
+  
+  .dashboard-card {
+    margin-bottom: 1.5rem;
+  }
+  
+  .table-responsive {
+    border-radius: 0.5rem;
+  }
+  
+  @media (max-width: 768px) {
+    .dashboard-container {
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .dashboard-header h2 {
+      font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+      font-size: 0.875rem;
+      border-radius: 0.5rem;
+    }
+    
+    .table-responsive table {
+      margin-bottom: 0;
+    }
+    
+    .table th,
+    .table td {
+      padding: 0.5rem 0.75rem;
+      vertical-align: middle;
+    }
+    
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .badge {
+      font-size: 0.7rem;
+    }
+    
+    .card-header {
+      padding: 0.75rem 1rem;
+    }
+    
+    .card-header h5,
+    .card-header span {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.8rem;
+    }
+    
+    .table th,
+    .table td {
+      padding: 0.4rem 0.5rem;
+    }
+    
+    .btn-sm {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.7rem;
+    }
+    
+    .badge {
+      font-size: 0.65rem;
+      padding: 0.25rem 0.4rem;
+    }
+    
+    .card-header {
+      padding: 0.6rem 0.8rem;
+    }
+    
+    .dashboard-header h2 {
+      font-size: 1.3rem;
+    }
+  }
+  .card-elevated {
+    box-shadow: 0 6px 18px rgba(16,24,40,0.08);
+    border: 0;
+  }
+  .card-header-compact {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .scroll-table {
+    max-height: 420px;
+    overflow: auto;
+  }
+  .table-sm th, .table-sm td { padding: .45rem .6rem; }
+  .badge-status { font-weight:600; padding:.45rem .6rem; }
+  .btn-verify { min-width:86px; }
+  @media (min-width: 992px) {
+    .dashboard-container { max-width:1200px; }
+  }
+</style>
+
+<div class="container dashboard-container">
+  <div class="dashboard-header">
+    <h2 class="mb-3">Welcome, {{ request.user.first_name|default:"Staff" }}!</h2>
+    <div class="card shadow-sm border-0 rounded-4 p-3">
+      <p class="mb-0">This is your staff dashboard.</p>
+      <small class="text-muted">Role: {{ staff_role|default:"Staff"|title }}</small>
+    </div>
+  </div>
+
+  <div class="row">
+    {% if staff_role == 'accounts_office' %}
+    <div class="container py-4">
+
+  <!-- PAGE HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+  </div>
+
+  <!-- TAB NAVIGATION -->
+  <ul class="nav nav-tabs mb-3" id="accountsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+        <i class="fas fa-clock me-1"></i> Pending
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="processed-tab" data-bs-toggle="tab" data-bs-target="#processed" type="button" role="tab">
+        <i class="fas fa-history me-1"></i> Processed
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="forwarded-tab" data-bs-toggle="tab" data-bs-target="#forwarded" type="button" role="tab">
+        <i class="fas fa-file-download me-1"></i> Forwarded
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+        <i class="fas fa-coins me-1"></i> Payment Summary
+      </button>
+    </li>
+  </ul>
+
+  <!-- TAB CONTENT -->
+  <div class="tab-content" id="accountsTabsContent">
+
+    <!-- === PENDING REQUESTS TAB === -->
+    <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+      <div class="card card-elevated rounded-3 mb-3">
+        <div class="card-header bg-secondary text-white"><i class="fas fa-clock"></i> Pending Requests</div>
+        <div class="card-body p-0">
+          {% if accounts_pending %}
+            <div class="scroll-table">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Student</th><th>Program</th><th>Ref</th><th>Index</th><th>Type</th><th>Requested</th><th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for req in accounts_pending %}
+                  <tr>
+                    <td>{{ req.student.name }}</td>
+                    <td>{{ req.student.program.name }}</td>
+                    <td><code>{{ req.reference_code }}</code></td>
+                    <td>{{ req.student.index_number }}</td>
+                    <td>{{ req.get_transcript_type_display }}</td>
+                    <td>{{ req.date_requested|date:"M d, Y H:i" }}</td>
+                    <td class="text-end">
+                      <a href="{% url 'update_payment' req.id %}" class="btn btn-sm btn-success"><i class="fas fa-check"></i></a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">No pending payment verifications.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- === PROCESSED TAB === -->
+    <div class="tab-pane fade" id="processed" role="tabpanel" aria-labelledby="processed-tab">
+      <div class="card rounded-3 mb-3">
+        <div class="card-header bg-light"><i class="fas fa-history"></i> Processed Requests</div>
+        <div class="card-body p-0">
+          {% if accounts_processed %}
+          <div class="p-3">
+            <input id="searchProcessed" class="form-control" placeholder="Search processed...">
+          </div>
+          <div class="scroll-table">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Student</th><th>Ref</th><th>Date</th><th>Status</th><th>Action Taken</th><th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody id="processedBody">
+                {% for req in accounts_processed %}
+                <tr class="text-muted small">
+                  <td>{{ req.student.name }}</td>
+                  <td><code>{{ req.reference_code }}</code></td>
+                  <td>{{ req.date_requested|date:"M d, Y H:i" }}</td>
+                  <td>
+                    {% if req.fee_clearance and req.fee_clearance.cleared %}<span class="badge bg-success">Cleared</span>
+                    {% elif req.fee_clearance and req.fee_clearance.owes %}<span class="badge bg-warning text-dark">Owes</span>
+                    {% else %}<span class="badge bg-secondary">Reviewed</span>{% endif %}
+                  </td>
+                  <td>{{ req.statuses.first.get_stage_display }}</td>
+                  <td class="text-end"><a href="{% url 'request_detail' req.id %}" class="btn btn-sm btn-outline-primary">View</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="p-4 text-center text-muted">No processed items.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- === FORWARDED TAB === -->
+    <div class="tab-pane fade" id="forwarded" role="tabpanel" aria-labelledby="forwarded-tab">
+      <div class="card rounded-3 mb-3">
+        <div class="card-header bg-success text-white"><i class="fas fa-file-download"></i> Forwarded to Exams</div>
+        <div class="card-body p-0">
+          {% if accounts_forwarded %}
+          <div class="scroll-table">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr><th>Student</th><th>Index</th><th>Reference</th><th>Type</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {% for req in accounts_forwarded %}
+                <tr>
+                  <td>{{ req.student.name }}</td>
+                  <td>{{ req.student.index_number }}</td>
+                  <td><code>{{ req.reference_code }}</code></td>
+                  <td>{{ req.get_transcript_type_display }}</td>
+                  <td>{{ req.date_requested|date:"M d, Y H:i" }}</td>
+                  <td><span class="badge bg-info">Forwarded</span></td>
+                  <td class="text-end"><a href="{% url 'request_detail' req.id %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="p-4 text-center text-muted">No forwarded transcripts yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+<div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+  <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+<div class="card-header bg-gradient text-white d-flex flex-wrap justify-content-between align-items-center px-4 py-3"
+     style="background: linear-gradient(135deg, #007bff, #00c6ff); border-top-left-radius: 12px; border-top-right-radius: 12px;">
+  <h5 class="mb-2 mb-md-0 fw-bold d-flex align-items-center">
+    <i class="fas fa-coins me-2"></i> Transcript Payment Summary
+  </h5>
+
+  <a style="color: white !important;" href="{% url 'export_staff_payments_excel' %}?start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
+     class="btn btn-success d-flex align-items-center gap-2 fw-semibold shadow-sm border-0 px-3 py-2 rounded-3 export-btn">
+    <i class="bi bi-file-earmark-excel-fill fs-5 text-success"></i>
+    <span>Export Excel</span>
+  </a>
+</div>
+
+<div class="card-body bg-light" style="max-height: 620px; overflow-y: auto;">
+  <form id="filterForm" method="get" class="bg-white rounded-4 shadow-sm p-4 mb-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold text-secondary">Start Date</label>
+        <input type="date" class="form-control shadow-sm" name="start_date"
+               value="{{ request.GET.start_date|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold text-secondary">End Date</label>
+        <input type="date" class="form-control shadow-sm" name="end_date"
+               value="{{ request.GET.end_date|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary w-100 fw-semibold shadow-sm mt-4 d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-funnel-fill"></i>
+          Apply Filter
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+
+<div class="alert alert-info shadow-sm text-center fw-semibold rounded-4 compact-alert">
+  <i class="bi bi-calculator-fill me-1"></i>
+  Total Collected:
+  <span class="text-primary">GHS {{ grand_total|floatformat:2 }}</span>
+</div>
+
+<style>
+.compact-alert {
+  padding: 8px 14px;  
+  font-size: 1rem;    
+  line-height: 1.3;    
+}
+</style>
+
+
+      {% if grouped_payments %}
+        {% for date, group in grouped_payments.items %}
+        <div class="mb-4 bg-white rounded-4 shadow-sm border border-1 border-light">
+          <div class="p-3 d-flex justify-content-between align-items-center border-bottom bg-gradient"
+               style="background: linear-gradient(90deg, #e9f3ff, #ffffff);">
+            <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-calendar3 me-2"></i>{{ date }}</h6>
+            <span class="fw-semibold text-success">Total: GHS {{ group.total|floatformat:2 }}</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr class="text-secondary fw-semibold">
+                  <th style="width: 50px;">#</th>
+                  <th>Student</th>
+                  <th>Transcript Type</th>
+                  <th>Date Requested</th>
+                  <th class="text-end">Amount (GHS)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for payment in group.payments|slice:":20" %}
+                <tr class="align-middle">
+                  <td class="fw-semibold">{{ forloop.counter }}</td>
+                  <td>
+                    {% if payment.student.user %}
+                      {{ payment.student.user.get_full_name|default:payment.student.user.username }}
+                    {% else %}
+                      {{ payment.student }}
+                    {% endif %}
+                  </td>
+                  <td class="text-capitalize">{{ payment.transcript_type|default:"—" }}</td>
+                  <td>{{ payment.date_requested|date:"M d, Y" }}</td>
+                  <td class="text-end fw-semibold text-primary">{{ payment.amount|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-3">No payments for this day.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+    
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="alert alert-warning text-center mt-4 rounded-4 shadow-sm">
+          No payments found for this date range.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+    tab.addEventListener('shown.bs.tab', e => {
+      localStorage.setItem('activeTab', e.target.getAttribute('data-bs-target'));
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const activeTab = localStorage.getItem('activeTab');
+    if (activeTab) {
+      const tab = document.querySelector(`button[data-bs-target="${activeTab}"]`);
+      if (tab) new bootstrap.Tab(tab).show();
+    }
+  });
+
+  const filterForm = document.getElementById('filterForm');
+  if (filterForm) {
+    filterForm.addEventListener('submit', () => {
+      const activeTab = document.querySelector('.nav-link.active');
+      if (activeTab) {
+        localStorage.setItem('activeTab', activeTab.getAttribute('data-bs-target'));
+      }
+    });
+  }
+</script>
+
+
+<script>
+  const input = document.getElementById('searchProcessed');
+  const rows = document.querySelectorAll('#processedBody tr');
+  if (input) {
+    input.addEventListener('input', () => {
+      const q = input.value.toLowerCase();
+      rows.forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
+    });
+  }
+</script>
+
+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   <style>
+.exams-header {
+  background: linear-gradient(90deg, #0d47a1 0%, #1976d2 50%, #0d47a1 100%);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.card {
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.official-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 700px;
+}
+
+.official-table th {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 12px 15px;
+  border-bottom: 2px solid #90caf9;
+}
+
+.official-table td {
+  font-size: 14px;
+  color: #212121;
+  padding: 10px 15px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.btn-generate, 
+.btn-outline-primary, 
+.btn-outline-secondary {
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-generate {
+  border: 2px solid #0d47a1;
+  color: #0d47a1;
+  background: transparent;
+  padding: 6px 12px;
+}
+
+.btn-generate:hover {
+  background: #0d47a1;
+  color: #fff;
+}
+
+.btn-outline-primary {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.btn-outline-primary:hover {
+  background-color: #1976d2;
+  color: #fff;
+}
+
+.btn-outline-secondary {
+  border-color: #90a4ae;
+  color: #607d8b;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #607d8b;
+  color: #fff;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.badge.bg-success {
+  background-color: #43a047 !important;
+  color: #fff;
+}
+
+.badge.bg-info {
+  background-color: #29b6f6 !important;
+  color: #212121;
+}
+
+.badge.bg-secondary {
+  background-color: #b0bec5 !important;
+  color: #fff;
+}
+
+.search-input {
+  border-radius: 8px;
+  border: 1px solid #b0bec5;
+  font-size: 14px;
+  padding: 10px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 12px;
+}
+
+/* --- SCROLL TABLE --- */
+.scroll-table {
+  overflow-x: auto;
+}
+
+/* --- EMPTY QUEUE MESSAGE --- */
+.text-center i {
+  color: #1976d2;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  .official-table th, .official-table td {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .btn-generate {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+  .search-input {
+    font-size: 13px;
+    padding: 8px;
+  }
+}
+</style>
+{% elif staff_role == 'exams_office' %}
+
+<div class="container my-4" style="max-width: 800px;">
+  <div class="tabs">
+    <div class="tabs-list line md" id="examsTabsList">
+      <button class="tab-trigger active" data-tab="queue">Queue</button>
+      <button class="tab-trigger" data-tab="processed">Processed</button>
+      <button class="tab-trigger" data-tab="disapproved">Disapprove</button>
+    </div>
+
+    <!-- Exams Queue -->
+    <div class="tab-content active" id="queue">
+      <div class="card shadow-sm rounded-4 border-0 mt-3">
+        <div class="card-header text-white d-flex align-items-center exams-header" style="background: #3b82f6;">
+          <i class="fas fa-graduation-cap me-2"></i>
+          <h6 class="mb-0 fw-bold">Exams Office Queue</h6>
+          <div class="ms-auto">
+            <a href="{% url 'exams_office_manual_upload' %}" class="btn btn-sm btn-outline-light">
+              <i class="fas fa-upload me-1"></i>Manual Upload
+            </a>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          {% if exams_queue %}
+            <div class="scroll-table">
+              <table class="table table-hover table-borderless align-middle mb-0 official-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>Student</th>
+                    <th>Reference</th>
+                    <th>Type</th>
+                    <th>Requested</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for req in exams_queue %}
+                  <tr>
+                    <td>
+                      <strong>{{ req.student.name }}</strong><br>
+                      <small class="text-muted">{{ req.student.index_number }}</small>
+                    </td>
+                    <td><code class="text-primary small">{{ req.reference_code }}</code></td>
+                    <td class="text-muted">{{ req.get_transcript_type_display }}</td>
+                    <td class="text-muted">{{ req.date_requested|date:"M d, Y H:i" }}</td>
+                    <td class="text-end">
+                      <a href="{% url 'generate_transcript' req.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-file-export me-1"></i>Generate
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              <i class="fas fa-clipboard-list fa-3x mb-3 text-primary"></i>
+              <h5 class="fw-semibold mb-2">Queue is Empty</h5>
+              <p class="mb-0">No items awaiting transcript generation.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Processed Requests -->
+    <div class="tab-content" id="processed">
+      <div class="card shadow-sm rounded-4 border-0 mt-3">
+        <div class="card-header text-dark bg-light d-flex align-items-center">
+          <i class="fas fa-history me-2"></i>
+          <h6 class="mb-0 fw-bold">Processed Requests</h6>
+        </div>
+        <div class="card-body p-0">
+          {% if exams_processed %}
+            <div class="p-3">
+              <input id="examsProcessedSearch" class="form-control search-input"
+                     placeholder="Search processed (name, index, reference)..." />
+            </div>
+            <div class="scroll-table">
+              <table class="table table-hover table-borderless align-middle mb-0 official-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>Student</th>
+                    <th>Ref</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th class="text-center">Status</th>
+                    <th>Action / Time</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="examsProcessedBody">
+                  {% for req in exams_processed %}
+                  <tr class="processed-row">
+                    <td><strong>{{ req.student.name }}</strong><br><small class="text-muted">{{ req.student.index_number }}</small></td>
+                    <td><code class="text-muted">{{ req.reference_code }}</code></td>
+                    <td class="text-muted">{{ req.get_transcript_type_display }}</td>
+                    <td class="text-muted">{{ req.date_requested|date:"M d, Y H:i" }}</td>
+                    <td class="text-center">
+                      {% with latest=req.statuses.first %}
+                        {% if latest %}
+                          {% if latest.stage == 'exams_office' %}
+                            <span class="badge bg-success">Generated</span>
+                          {% elif latest.stage == 'registrar' %}
+                            <span class="badge bg-info text-dark">Forwarded</span>
+                          {% else %}
+                            <span class="badge bg-secondary">{{ latest.get_stage_display }}</span>
+                          {% endif %}
+                        {% else %}
+                          <span class="badge bg-secondary">Processed</span>
+                        {% endif %}
+                      {% endwith %}
+                    </td>
+                    <td>
+                      {% with latest=req.statuses.first %}
+                        {% if latest %}
+                          <div class="fw-semibold">{{ latest.get_stage_display }}</div>
+                          <small class="text-muted">{{ latest.updated_on|date:"M d, Y H:i" }}</small>
+                        {% else %}
+                          <small class="text-muted">No action recorded</small>
+                        {% endif %}
+                      {% endwith %}
+                    </td>
+                    <td class="text-end">
+                      {% if req.transcript and not req.transcript.registrar_signature %}
+                        <a class="btn btn-sm btn-outline-secondary me-1" href="{% url 'generate_transcript_preview' req.id %}" target="_blank" title="View transcript">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                      {% endif %}
+                      {% with latest=req.statuses.first %}
+                        {% if latest and latest.stage == 'exams_office' %}
+                          <a href="{% url 'exams_office_approve_disapprove' req.id %}" class="btn btn-sm btn-success me-1" title="Approve/Disapprove">
+                            <i class="fas fa-check"></i>
+                          </a>
+                        {% endif %}
+                      {% endwith %}
+                      <a href="{% url 'request_detail' req.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              <i class="fas fa-folder-open fa-3x mb-3 text-secondary"></i>
+              <h5 class="fw-semibold mb-2">No Processed Items</h5>
+              <p class="mb-0">No processed requests yet.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Disapproved Requests -->
+    <div class="tab-content" id="disapproved">
+      <div class="card shadow-sm rounded-4 border-0 mt-3">
+        <div class="card-header text-white d-flex align-items-center" style="background: #dc3545;">
+          <i class="fas fa-times-circle me-2"></i>
+          <h6 class="mb-0 fw-bold">Disapproved Requests</h6>
+        </div>
+        <div class="card-body p-0">
+          {% if exams_disapproved %}
+            <div class="p-3">
+              <input id="examsDisapprovedSearch" class="form-control search-input"
+                     placeholder="Search disapproved (name, index, reference)..." />
+            </div>
+            <div class="scroll-table">
+              <table class="table table-hover table-borderless align-middle mb-0 official-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>Student</th>
+                    <th>Ref</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th class="text-center">Status</th>
+                    <th>Disapproved By</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="examsDisapprovedBody">
+                  {% for req in exams_disapproved %}
+                  <tr class="disapproved-row">
+                    <td><strong>{{ req.student.name }}</strong><br><small class="text-muted">{{ req.student.index_number }}</small></td>
+                    <td><code class="text-muted">{{ req.reference_code }}</code></td>
+                    <td class="text-muted">{{ req.get_transcript_type_display }}</td>
+                    <td class="text-muted">{{ req.date_requested|date:"M d, Y H:i" }}</td>
+                    <td class="text-center">
+                      <span class="badge bg-danger">Disapproved</span>
+                    </td>
+                    <td>
+                      {% with latest=req.statuses.first %}
+                        {% if latest %}
+                          <div class="fw-semibold">{{ latest.updated_by }}</div>
+                          <small class="text-muted">{{ latest.updated_on|date:"M d, Y H:i" }}</small>
+                        {% else %}
+                          <small class="text-muted">Unknown</small>
+                        {% endif %}
+                      {% endwith %}
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'exams_office_approve_disapprove' req.id %}" class="btn btn-sm btn-success me-1" title="Reapprove">
+                        <i class="fas fa-check"></i> Reapprove
+                      </a>
+                      <a href="{% url 'request_detail' req.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+              <h5 class="fw-semibold mb-2">No Disapproved Items</h5>
+              <p class="mb-0">All requests are in good standing.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --primary: #3b82f6;
+    --border: #e5e7eb;
+    --accent: #f3f4f6;
+    --foreground: #111827;
+    --muted-foreground: #6b7280;
+    --background: #ffffff;
+  }
+
+
+  /* Base Tabs Layout */
+  .tabs {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  /* Tabs List (default variant) */
+  .tabs-list {
+    display: flex;
+    align-items: center;
+    background: var(--accent);
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  /* Line variant */
+  .tabs-list.line {
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0;
+    gap: 2rem;
+  }
+
+  /* Button variant */
+  .tabs-list.button {
+    background: transparent;
+    padding: 0;
+    gap: 0.75rem;
+  }
+
+  /* Tab Trigger */
+  .tab-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--muted-foreground);
+    transition: all 0.2s ease;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+  }
+
+  /* Default variant (active state) */
+  .tabs-list.default .tab-trigger.active {
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Button variant (active) */
+  .tabs-list.button .tab-trigger.active {
+    background: var(--accent);
+    color: var(--foreground);
+  }
+
+  /* Line variant (active underline) */
+  .tabs-list.line .tab-trigger {
+    border-bottom: 2px solid transparent;
+    padding: 0.5rem 0;
+  }
+
+  .tabs-list.line .tab-trigger.active {
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* Hover */
+  .tab-trigger:hover {
+    color: var(--foreground);
+  }
+
+  /* Tab Content */
+  .tab-content {
+    margin-top: 1rem;
+    display: none;
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* Size Variants */
+  .tabs-list.lg .tab-trigger {
+    font-size: 1rem;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .tabs-list.md .tab-trigger {
+    font-size: 0.95rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .tabs-list.sm .tab-trigger {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .tabs-list.xs .tab-trigger {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.5rem;
+  }
+</style>
+
+<script>
+  // Tabs switch logic
+  const tabButtons = document.querySelectorAll('#examsTabsList .tab-trigger');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabButtons.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  const epsInput = document.getElementById('examsProcessedSearch');
+  if (epsInput) {
+    epsInput.addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('#examsProcessedBody .processed-row').forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+  }
+
+  const edsInput = document.getElementById('examsDisapprovedSearch');
+  if (edsInput) {
+    edsInput.addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('#examsDisapprovedBody .disapproved-row').forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+  }
+</script>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* --- HEADER GRADIENT --- */
+  .exams-header {
+    background: linear-gradient(90deg, #003366 0%, #0055b3 50%, #003366 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* --- TABLE STYLING --- */
+  .official-table th {
+    color: #002855;
+    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: 700;
+    border-bottom: 2px solid #dee2e6;
+  }
+
+  .official-table td {
+    font-size: 14px;
+    vertical-align: middle;
+    color: #333;
+  }
+
+  /* --- BUTTON --- */
+  .btn-generate {
+    background: transparent;
+    border: 2px solid #002855;
+    color: #002855;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-generate:hover {
+    background: #002855;
+    color: #fff;
+  }
+
+  /* --- SEARCH --- */
+  .search-input {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  /* --- SCROLL WRAPPER --- */
+  .scroll-table {
+    overflow-x: auto;
+  }
+
+  /* --- RESPONSIVENESS --- */
+  @media (max-width: 768px) {
+    .official-table th, .official-table td {
+      font-size: 13px;
+    }
+    .btn-generate {
+      font-size: 12px;
+      padding: 5px 10px;
+    }
+  }
+</style>
+
+    {% elif staff_role == 'registrar' %}
+  {% if staff_role == 'registrar' %}
+<div class="container py-4">
+
+  <!-- TAB NAV -->
+<ul class="nav nav-tabs mb-3" id="registrarTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="queue-tab" data-bs-toggle="tab" data-bs-target="#queue" type="button" role="tab">
+      <i class="fas fa-tasks me-1"></i> Pending Queue
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="transcripts-tab" data-bs-toggle="tab" data-bs-target="#transcripts" type="button" role="tab">
+      <i class="fas fa-file-alt me-1"></i> Generated Transcripts
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="disapproved-tab" data-bs-toggle="tab" data-bs-target="#disapproved" type="button" role="tab">
+      <i class="fas fa-ban me-1"></i> Disapproved Requests
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
+      <i class="fas fa-credit-card me-1"></i> Payment
+    </button>
+  </li>
+</ul>
+
+<!-- TAB CONTENT -->
+<div class="tab-content" id="registrarTabsContent">
+
+  <!-- === PENDING QUEUE === -->
+  <div class="tab-pane fade show active" id="queue" role="tabpanel" aria-labelledby="queue-tab">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-header text-white" style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);">
+        <div class="d-flex align-items-center justify-content-between">
+          <div><i class="fas fa-user-clock me-2"></i> Pending Approval</div>
+          <div>
+            <a href="{% url 'registrar_manual_upload' %}" class="btn btn-sm btn-outline-light">Manual Upload</a>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        {% if registrar_pending %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Student</th>
+                <th>Index</th>
+                <th>Reference</th>
+                <th>Type</th>
+                <th>Requested</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in registrar_pending %}
+              <tr>
+                <td>{{ req.student.name }}</td>
+                <td>{{ req.student.index_number }}</td>
+                <td><code class="text-muted">{{ req.reference_code }}</code></td>
+                <td>
+                  {% if req.transcript_type == 'official' %}
+                    <span class="badge bg-success">Official</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Unofficial</span>
+                  {% endif %}
+                </td>
+                <td>{{ req.date_requested|date:"M d, Y h:i A" }}</td>
+                <td class="text-end">
+                  <a href="{% url 'registrar_action' req.id %}" class="btn btn-sm btn-outline-primary">Take Action</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+          <i class="fas fa-inbox fa-3x mb-3 text-info"></i>
+          <h5>No Pending Items</h5>
+          <p>No transcript requests awaiting Registrar action.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- === GENERATED TRANSCRIPTS === -->
+  <div class="tab-pane fade" id="transcripts" role="tabpanel" aria-labelledby="transcripts-tab">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <div><i class="fas fa-search me-2"></i>Search Generated Transcripts</div>
+        <span class="badge bg-light text-dark">Registrar Panel</span>
+      </div>
+
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <input id="transcriptSearch" class="form-control"
+              placeholder="Search by student name, index, reference or type...">
+          </div>
+        </div>
+
+        <script>
+          document.addEventListener("DOMContentLoaded", function() {
+            const searchInput = document.getElementById("transcriptSearch");
+            const table = searchInput.closest(".card-body").querySelector("table tbody");
+            const rows = table.querySelectorAll("tr");
+
+            searchInput.addEventListener("input", function() {
+              const query = this.value.toLowerCase();
+              rows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                let match = false;
+                cells.forEach((cell, index) => {
+                  if (index < 5 && cell.textContent.toLowerCase().includes(query)) match = true;
+                });
+                row.style.display = match ? "" : "none";
+              });
+            });
+          });
+        </script>
+
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-secondary text-white d-flex justify-content-between">
+            <div>
+              <strong>All Transcripts</strong>
+              <div class="small">Approved transcripts by the Registrar</div>
+            </div>
+            <span class="badge bg-light text-dark">
+              {{ unofficial_transcripts|length|add:official_transcripts|length }} total
+            </span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead class="table-primary">
+                  <tr>
+                    <th>Student</th>
+                    <th>Index</th>
+                    <th>Reference</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in unofficial_transcripts %}
+                  {% with req=t.transcript_obj.transcript_request|default:t.item %}
+                  <tr>
+                    <td>{{ req.student.name }}</td>
+                    <td>{{ req.student.index_number }}</td>
+                    <td><code>{{ req.reference_code }}</code></td>
+                    <td><span class="badge bg-info text-dark">Unofficial</span></td>
+                    <td>{{ t.display_date|date:"M d, Y h:i A" }}</td>
+                    <td class="text-end">
+                      <a class="btn btn-sm btn-outline-primary" href="{% url 'generate_transcript_preview' req.id %}" target="_blank">
+                        <i class="fas fa-eye me-1"></i>Preview
+                      </a>
+                      <a class="btn btn-sm btn-primary" href="{% url 'student_download_transcript' req.id %}">
+                        <i class="fas fa-download me-1"></i>Download
+                      </a>
+                    </td>
+                  </tr>
+                  {% endwith %}
+                  {% endfor %}
+
+                  {% for t in official_transcripts %}
+                  {% with req=t.transcript_obj.transcript_request|default:t.item %}
+                  <tr>
+                    <td>{{ req.student.name }}</td>
+                    <td>{{ req.student.index_number }}</td>
+                    <td><code>{{ req.reference_code }}</code></td>
+                    <td><span class="badge bg-success text-white">Official</span></td>
+                    <td>{{ t.display_date|date:"M d, Y h:i A" }}</td>
+                    <td class="text-end">
+                      <a class="btn btn-sm btn-outline-primary" href="{% url 'generate_transcript_preview' req.id %}" target="_blank">
+                        <i class="fas fa-eye me-1"></i>Preview
+                      </a>
+                      <a class="btn btn-sm btn-primary" href="{% url 'student_download_transcript' req.id %}">
+                        <i class="fas fa-download me-1"></i>Download
+                      </a>
+                    </td>
+                  </tr>
+                  {% endwith %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === DISAPPROVED REQUESTS === -->
+  <div class="tab-pane fade" id="disapproved" role="tabpanel" aria-labelledby="disapproved-tab">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-header bg-danger text-white d-flex justify-content-between">
+        <div><strong>Disapproved Transcript Requests</strong></div>
+        <span class="badge bg-light text-dark">{{ registrar_disapproved|length }} total</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead class="table-danger">
+              <tr>
+                <th>Student</th>
+                <th>Index</th>
+                <th>Reference</th>
+                <th>Date</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in registrar_disapproved %}
+              <tr>
+                <td>{{ req.student.name }}</td>
+                <td>{{ req.student.index_number }}</td>
+                <td><code>{{ req.reference_code }}</code></td>
+                <td>{{ req.date_requested|date:"M d, Y h:i A" }}</td>
+                <td class="text-end">
+                  <a href="{% url 'registrar_action' req.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>Review
+                  </a>
+                  <a href="{% url 'registrar_reapprove' req.id %}" class="btn btn-sm btn-success">
+                    <i class="fas fa-check me-1"></i>Re-Approve
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-3">No disapproved transcripts.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- === PAYMENT TAB === -->
+<div class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+      <div><i class="fas fa-credit-card me-2"></i> Payment Management</div>
+    </div>
+
+    <div class="card-body">
+      <!-- FILTER SECTION -->
+      <form id="filterForm" class="row g-3 align-items-end mb-3">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Start Date</label>
+          <input type="date" id="startDate" class="form-control rounded-3">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">End Date</label>
+          <input type="date" id="endDate" class="form-control rounded-3">
+        </div>
+        <div class="col-md-6 d-flex gap-2">
+          <button type="button" id="applyFilter" class="btn btn-primary rounded-3 px-4">
+            <i class="bi bi-funnel-fill"></i> Apply Filter
+          </button>
+          <button type="button" id="resetFilter" class="btn btn-secondary rounded-3 px-4">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
+          <button type="button" id="exportExcel" class="btn btn-success rounded-3 px-4">
+            <i class="bi bi-file-earmark-excel"></i> Export Excel
+          </button>
+        </div>
+      </form>
+
+      <!-- TOTAL SUMMARY -->
+      <div class="alert alert-info py-2 text-center rounded-3 shadow-sm mb-3" id="totalSummary">
+        <i class="bi bi-calculator"></i>
+        <strong>Total:</strong> 
+        <span class="text-primary fw-bold" id="grandTotal">GHS {{ grand_total|floatformat:2 }}</span>
+      </div>
+
+      <!-- PAYMENT TABLE -->
+      <div class="table-responsive">
+        <table id="paymentTable" class="table table-hover align-middle table-bordered rounded-3 shadow-sm">
+          <thead class="table-primary text-center">
+            <tr>
+              <th>#</th>
+              <th>Date Requested</th>
+              <th>Student</th>
+              <th>Index</th>
+              <th>Amount (GHS)</th>
+              <th>Transcript Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in payments %}
+            <tr>
+              <td class="text-center">{{ forloop.counter }}</td>
+              <td>{{ p.date_requested|date:"Y-m-d" }}</td>
+              <td>{{ p.student.name }}</td>
+              <td>{{ p.student.index_number }}</td>
+              <td class="fw-semibold text-success">{{ p.amount|floatformat:2 }}</td>
+              <td>{{ p.transcript_type|capfirst }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-3">
+                <i class="bi bi-inbox text-primary fs-3 d-block mb-2"></i>
+                No payment records found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === JS: FILTER + EXPORT === -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const applyFilterBtn = document.getElementById("applyFilter");
+  const resetFilterBtn = document.getElementById("resetFilter");
+  const exportBtn = document.getElementById("exportExcel");
+  const table = document.getElementById("paymentTable");
+  const rows = table.querySelectorAll("tbody tr");
+  const grandTotalEl = document.getElementById("grandTotal");
+
+  function parseDate(str) {
+    const [y, m, d] = str.split("-");
+    return new Date(y, m - 1, d);
+  }
+
+  function filterRows() {
+    const start = document.getElementById("startDate").value;
+    const end = document.getElementById("endDate").value;
+
+    let total = 0;
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const dateCell = row.cells[1];
+      const amountCell = row.cells[4];
+      if (!dateCell || !amountCell) return;
+
+      const rowDate = new Date(dateCell.textContent.trim());
+      const amount = parseFloat(amountCell.textContent) || 0;
+
+      let visible = true;
+      if (start && rowDate < parseDate(start)) visible = false;
+      if (end && rowDate > parseDate(end)) visible = false;
+
+      row.style.display = visible ? "" : "none";
+      if (visible) {
+        total += amount;
+        visibleCount++;
+      }
+    });
+
+    grandTotalEl.textContent = `GHS ${total.toFixed(2)}`;
+  }
+
+  function resetFilter() {
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
+    rows.forEach(row => row.style.display = "");
+    let total = 0;
+    rows.forEach(row => {
+      const amount = parseFloat(row.cells[4]?.textContent) || 0;
+      total += amount;
+    });
+    grandTotalEl.textContent = `GHS ${total.toFixed(2)}`;
+  }
+
+  applyFilterBtn.addEventListener("click", filterRows);
+  resetFilterBtn.addEventListener("click", resetFilter);
+
+  exportBtn.addEventListener("click", function () {
+    const visibleRows = [...rows].filter(r => r.style.display !== "none");
+    const csv = [];
+    const headerCols = table.querySelectorAll("thead th");
+    const headerRow = [...headerCols].map(col => col.innerText);
+    csv.push(headerRow.join(","));
+
+    visibleRows.forEach(row => {
+      const cols = row.querySelectorAll("td");
+      const rowData = [...cols].map(col => col.innerText.replace(/,/g, ""));
+      csv.push(rowData.join(","));
+    });
+
+    const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "filtered_payments.csv";
+    link.click();
+  });
+});
+</script>
+
+</div> <!-- end .tab-content -->
+
+
+</div>
+{% endif %}
+
+<script>
+  // Simple transcript search filter
+  const searchInput = document.getElementById('transcriptSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      const query = this.value.toLowerCase();
+      document.querySelectorAll('.transcript-table tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+      });
+    });
+  }
+</script>
+
+
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ✅ JS Search Filter -->
+    <script>
+    document.getElementById("transcriptSearch").addEventListener("keyup", function () {
+      const searchValue = this.value.toLowerCase();
+      document.querySelectorAll(".transcript-table tbody tr").forEach((row) => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(searchValue) ? "" : "none";
+      });
+    });
+    </script>
+    
+    
+
+<style>
+/* Table hover enhancement */
+.table-hover tbody tr:hover {
+  background-color: #f1f5ff;
+  transition: background 0.2s ease;
+}
+
+/* Search input */
+#transcriptSearch {
+  border-radius: 2rem;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  transition: box-shadow 0.3s ease;
+}
+#transcriptSearch:focus {
+  border-color: #004085;
+  box-shadow: 0 0 0 0.2rem rgba(0, 64, 133, 0.15);
+}
+
+/* Card header badges */
+.card-header .badge {
+  font-size: 0.8rem;
+}
+
+/* Buttons */
+.btn-outline-primary:hover {
+  background-color: #004085;
+  color: #fff;
+}
+.btn-primary {
+  background: linear-gradient(90deg, #0069d9, #004085);
+  border: none;
+}
+.btn-primary:hover {
+  background: linear-gradient(90deg, #004085, #003060);
+}
+</style>
+
+{% endif %}
+
+  <!-- Additional Actions Section removed per request -->
+</div>
+
+{% endblock %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const input = document.getElementById('transcriptSearch');
+  if(!input) return;
+  const registrarTable = document.getElementById('registrarTable');
+  const examsTable = document.getElementById('examsTable');
+  function filterTable(table, q){
+    if(!table) return;
+    Array.from(table.querySelectorAll('tbody tr')).forEach(tr => {
+      const text = tr.innerText.toLowerCase();
+      tr.style.display = text.includes(q) ? '' : 'none';
+    });
+  }
+  input.addEventListener('input', function(){
+    const q = this.value.trim().toLowerCase();
+    filterTable(registrarTable, q);
+    filterTable(examsTable, q);
+  });
+});
+</script>

@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuperAdmin Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{% static 'css/superadmin.css' %}" rel="stylesheet">
+</head>
+<body class="superadmin-bg d-flex align-items-center justify-content-center min-vh-100">
+
+  <div class="login-card shadow-lg p-4 rounded-4 text-center">
+    <h2 class="mb-3 fw-bold text-light">SuperAdmin Login</h2>
+    <p class="text-muted">Access restricted to system superusers only</p>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mt-3">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" class="mt-4">
+      {% csrf_token %}
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+        <label for="username">Username</label>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+        <label for="password">Password</label>
+      </div>
+
+      <button type="submit" class="btn btn-warning w-100 py-2 fw-bold">Sign In</button>
+    </form>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Add Department</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="department" class="form-label">Department Name</label>
+            <input type="text" name="department" id="department" class="form-control" placeholder="Enter department name" required>
+        </div>
+        <div class="mb-3">
+            <label for="HoD" class="form-label">Head of Department</label>
+            <input type="text" name="HoD" id="HoD" class="form-control" placeholder="Enter HoD name" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Department</button>
+    </form>
+</div>
+{% endblock content %}

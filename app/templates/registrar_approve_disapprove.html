@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Approve/Disapprove Transcript{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-gavel me-2"></i>
+                        Transcript Approval/Disapproval
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Transcript Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Student Information</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Name:</strong> {{ transcript_request.student.name }}</li>
+                                <li><strong>Index Number:</strong> {{ transcript_request.student.index_number }}</li>
+                                <li><strong>Program:</strong> {{ transcript_request.student.program.name }}</li>
+                                <li><strong>Department:</strong> {{ transcript_request.student.department.department }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Transcript Details</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Reference Code:</strong> {{ transcript_request.reference_code }}</li>
+                                <li><strong>Type:</strong> {{ transcript_request.get_transcript_type_display }}</li>
+                                <li><strong>Date Requested:</strong> {{ transcript_request.date_requested|date:"F d, Y H:i" }}</li>
+                                {% if transcript_request.transcript_type == 'unofficial' and transcript_request.selected_faculty_registrar %}
+                                <li><strong>Faculty Registrar:</strong> {{ transcript_request.selected_faculty_registrar.name }} - {{ transcript_request.selected_faculty_registrar.faculty_name }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Current Status -->
+                    <div class="alert {% if is_currently_approved %}alert-success{% else %}alert-warning{% endif %}">
+                        <strong>Current Status:</strong> 
+                        {% if is_currently_approved %}
+                            <span class="badge bg-success">Approved</span> by {{ current_approval.approved_by }} on {{ current_approval.date_approved|date:"F d, Y H:i" }}
+                        {% else %}
+                            <span class="badge bg-warning">Pending Approval</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Form -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="remarks" class="form-label">Remarks/Comments</label>
+                                    <textarea class="form-control" id="remarks" name="remarks" rows="3" 
+                                              placeholder="Enter remarks for this action..."></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" name="action" value="approve" class="btn btn-success btn-lg">
+                                        <i class="fas fa-check me-2"></i>
+                                        {% if is_currently_approved %}Re-approve{% else %}Approve{% endif %}
+                                    </button>
+                                    <button type="submit" name="action" value="disapprove" class="btn btn-danger btn-lg">
+                                        <i class="fas fa-times me-2"></i>Disapprove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Approval History -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Approval History</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if approval_history %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Action</th>
+                                                <th>By</th>
+                                                <th>Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for history in approval_history %}
+                                            <tr>
+                                                <td>{{ history.date_action|date:"M d, Y H:i" }}</td>
+                                                <td>
+                                                    <span class="badge {% if history.action == 'approved' or history.action == 'reapproved' %}bg-success{% else %}bg-danger{% endif %}">
+                                                        {{ history.get_action_display }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ history.approved_by }}</td>
+                                                <td>{{ history.remarks|default:"No remarks" }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">No approval history available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="{% url 'request_detail' transcript_request.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Details
+                        </a>
+                        {% if transcript_request.transcript_type == 'unofficial' %}
+                        <a href="{% url 'change_faculty_registrar' transcript_request.pk %}" class="btn btn-warning">
+                            <i class="fas fa-exchange-alt me-1"></i>Change Faculty
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'generate_transcript_preview' transcript_request.pk %}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>Preview Transcript
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

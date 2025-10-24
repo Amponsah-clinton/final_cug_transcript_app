@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-sm rounded-3">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Add Faculty Registrar</h5>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Registrar Name</label>
+          {{ form.name }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Faculty Name</label>
+          {{ form.faculty_name }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Signature (Image)</label>
+          {{ form.signature }}
+        </div>
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-save me-1"></i> Save Registrar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

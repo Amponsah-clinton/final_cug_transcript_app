@@ -1,0 +1,533 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Transcript Management{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .navbar {
+      background: linear-gradient(90deg, #0069d9, #004085);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.3rem;
+      letter-spacing: 0.5px;
+      color: #fff !important;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .navbar-brand i {
+      font-size: 1.5rem;
+    }
+
+    .navbar-nav .nav-link {
+      color: #f8f9fa !important;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      margin: 3px 6px;
+      border-radius: 6px;
+      padding: 8px 14px;
+      text-align: center;
+    }
+
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #fff !important;
+    }
+
+    .nav-link.text-warning {
+      color: #ffc107 !important;
+    }
+
+    .nav-link.text-warning:hover {
+      background-color: rgba(255, 193, 7, 0.15);
+    }
+
+    @media (max-width: 991px) {
+      .nav-link i {
+        display: none;
+      }
+      .navbar-nav .nav-link {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding-left: 12px;
+      }
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+    }
+
+    .alert {
+      border-radius: 10px;
+    }
+
+    .site-loader-overlay {
+      position: fixed;
+      inset: 0;
+      background: #f7f6f6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      transition: opacity 0.3s ease;
+    }
+
+    .site-loader {
+      --float: 5%;
+      --radius: 4rem;
+      width: var(--radius);
+      height: var(--radius);
+      border-radius: 50%;
+      background: url("https://res.cloudinary.com/dsypclqxk/image/upload/v1756722559/catholic-university-ghana-logo_onhrgj.jpg") no-repeat center center/contain;
+      position: relative;
+      animation: floatAtom 1s linear infinite;
+      box-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    .site-loader .loader-orbits {
+      --color-line: #0f0f0f;
+      --color-glow: #0ff;
+      --electron-nb: 3;
+      --radius: 500%;
+      border-radius: var(--radius);
+      filter: drop-shadow(0 0 0.3rem var(--color-glow));
+      height: var(--radius);
+      left: calc(50% - var(--radius) / 2);
+      position: absolute;
+      top: calc(50% - var(--radius) / 2);
+      width: var(--radius);
+    }
+
+    .site-loader .loader-orbits__electron {
+      --clip-radius: 20%;
+      --radius: 100%;
+      --ratio: 4;
+      border-radius: var(--radius);
+      height: calc(var(--radius) / var(--ratio));
+      left: calc(50% - var(--radius) / 2);
+      position: absolute;
+      top: calc(50% - var(--radius) / (var(--ratio) * 2));
+      transform: rotateZ(calc(var(--index) * 180deg / var(--electron-nb)));
+      width: var(--radius);
+      z-index: 100;
+      animation: orbitElectron 0.5s linear infinite;
+      animation-delay: calc((var(--index) + 1) * 0.5s / var(--electron-nb));
+    }
+
+    .site-loader .loader-orbits__electron::before,
+    .site-loader .loader-orbits__electron::after {
+      border-radius: inherit;
+      box-shadow: inset 0 var(--offset-direction) 0 0.02rem var(--color-line);
+      content: "";
+      height: 100%;
+      left: 0;
+      position: absolute;
+      top: 0;
+      width: 100%;
+    }
+
+    .site-loader .loader-orbits__electron::before { --offset-direction: 0.1rem; }
+    .site-loader .loader-orbits__electron::after { --offset-direction: -0.1rem; }
+
+    .site-loader .loader-orbits__electron:nth-child(1) { --index: 0; }
+    .site-loader .loader-orbits__electron:nth-child(2) { --index: 1; }
+    .site-loader .loader-orbits__electron:nth-child(3) { --index: 2; }
+
+    @keyframes floatAtom {
+      0% { transform: translateY(calc(-1 * var(--float))); }
+      25% { transform: translateY(calc(-2 * var(--float))); }
+      50% { transform: translateY(calc(-1 * var(--float))); }
+      75% { transform: translateY(calc(0 * var(--float))); }
+      100% { transform: translateY(calc(-1 * var(--float))); }
+    }
+
+    @keyframes orbitElectron {
+      0% { clip-path: ellipse(calc(2 * var(--clip-radius)) var(--clip-radius) at 50% 0); }
+      25% { clip-path: ellipse(calc(2 * var(--clip-radius)) var(--clip-radius) at 0 50%); }
+      50% { clip-path: ellipse(calc(2 * var(--clip-radius)) var(--clip-radius) at 50% 100%); }
+      75% { clip-path: ellipse(calc(2 * var(--clip-radius)) var(--clip-radius) at 100% 50%); }
+      100% { clip-path: ellipse(calc(2 * var(--clip-radius)) var(--clip-radius) at 50% 0); }
+    }
+  </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+  <div id="site-loader" class="site-loader-overlay" aria-hidden="true">
+    <div class="site-loader" role="img" aria-label="Loading">
+      <div class="loader-orbits">
+        <div class="loader-orbits__electron"></div>
+        <div class="loader-orbits__electron"></div>
+        <div class="loader-orbits__electron"></div>
+      </div>
+    </div>
+  </div>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container">
+<a class="navbar-brand fw-bold text-warning" 
+   href="{% if user.is_authenticated and user.is_staff %}{% url 'staff_dashboard' %}
+          {% elif user.is_authenticated %}{% url 'student_dashboard' %}
+          {% else %}{% url 'landing_page' %}{% endif %}">
+  <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1756722559/catholic-university-ghana-logo_onhrgj.jpg" 
+       alt="Logo" 
+       style="height:45px; width:45px; border-radius:50%; object-fit:cover; background:white; padding:3px; margin-right:8px;">
+  Transcript Portal
+</a>
+
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navmenu"
+            aria-controls="navmenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navmenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center flex-column flex-lg-row">
+
+        {% if user.is_authenticated %}
+          <!-- STUDENT LINKS -->
+          {% if not user.is_staff %}
+            <li class="nav-item"><a href="{% url 'student_dashboard' %}" class="nav-link hover-underline">My Dashboard</a></li>
+            <li class="nav-item"><a href="{% url 'request_transcript' %}" class="nav-link hover-underline">Request Transcript</a></li>
+            <li class="nav-item"><a href="{% url 'student_approved_transcripts' %}" class="nav-link hover-underline">Approved Transcripts</a></li>
+          {% endif %}
+
+          <!-- STAFF ROLES -->
+          {% if user.role == 'exams_office' %}
+            <li class="nav-item"><a href="{% url 'manage_students' %}" class="nav-link hover-underline">Manage Students</a></li>
+            <li class="nav-item"><a href="{% url 'generate_transcript_preview' pk=1 %}" class="nav-link hover-underline">Preview Transcript</a></li>
+
+          {% elif user.role == 'accounts_office' %}
+            <li class="nav-item"><a href="{% url 'accounts_verification_queue' %}" class="nav-link hover-underline">Verify Payments</a></li>
+            <li class="nav-item"><a href="{% url 'invoice_download' pk=1 %}" class="nav-link hover-underline">Download Invoice</a></li>
+
+          {% elif user.role == 'hod' %}
+            <li class="nav-item"><a href="{% url 'approve_transcript' pk=1 %}" class="nav-link hover-underline">Approve Transcript</a></li>
+            <li class="nav-item"><a href="{% url 'department_list' %}" class="nav-link hover-underline">Departments</a></li>
+
+          {% elif user.role == 'dean_of_student' %}
+            <li class="nav-item"><a href="{% url 'approve_transcript' pk=1 %}" class="nav-link hover-underline">Transcript Approval</a></li>
+            <li class="nav-item"><a href="{% url 'student_list' %}" class="nav-link hover-underline">Student Records</a></li>
+
+          {% elif user.role == 'vice_chancellor' %}
+            <li class="nav-item"><a href="{% url 'approve_transcript' pk=1 %}" class="nav-link hover-underline">Final Approvals</a></li>
+            <li class="nav-item"><a href="{% url 'verify_transcript' code='sample' %}" class="nav-link hover-underline">Verify Transcript</a></li>
+
+          {% elif user.role == 'registrar' %}
+            <li class="nav-item"><a href="{% url 'registrar_action' pk=1 %}" class="nav-link hover-underline">Registrar Actions</a></li>
+            <li class="nav-item"><a href="{% url 'registrar_reapprove' request_id=1 %}" class="nav-link hover-underline">Reapprove Transcript</a></li>
+          {% endif %}
+
+        {% if user.is_superuser %}
+  <!-- Visible Superadmin Items -->
+  <li class="nav-item">
+    <a href="{% url 'create_staff' %}" class="nav-link hover-underline">Create Staff</a>
+  </li>
+  <li class="nav-item">
+    <a href="{% url 'upload_students' %}" class="nav-link hover-underline">Upload Students</a>
+  </li>
+
+  <!-- Dropdown for Faculty / Department Management -->
+  <li class="nav-item dropdown position-relative">
+    <a class="nav-link dropdown-toggle text-warning fw-semibold d-flex align-items-center"
+       href="#" id="superadminDropdown"
+       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      Manage Setup
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+           class="bi bi-caret-down-fill ms-1" viewBox="0 0 16 16">
+        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+      </svg>
+    </a>
+<ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="superadminDropdown">
+  <li><a class="dropdown-item" href="{% url 'manage_faculty_registrars' %}">Faculty Registrars</a></li>
+  <li><a class="dropdown-item" href="{% url 'manage_transcript_types' %}">Transcript Types</a></li>
+  <li><a class="dropdown-item" href="{% url 'manage_departments' %}">Departments</a></li>
+  <li><a class="dropdown-item" href="{% url 'manage_programs' %}">Programs</a></li>
+  <li><a class="dropdown-item" href="{% url 'manage_students' %}">Manage Students</a></li>
+  <li><a class="dropdown-item" href="{% url 'add_contact' %}">Manage Contacts</a></li>
+
+  <li><hr class="dropdown-divider"></li>
+
+  <li><a class="dropdown-item" href="{% url 'manage_whatsapp_groups' %}">WhatsApp Groups</a></li>
+  <li><a class="dropdown-item" href="{% url 'manual_verify' %}">Verify Transcript</a></li>
+
+  <!-- New section for staff management -->
+  <li><hr class="dropdown-divider"></li>
+  <li><a class="dropdown-item" href="{% url 'staff_profile_list' %}">Manage Staff Profiles</a></li>
+</ul>
+
+  </li>
+{% endif %}
+
+          <li class="nav-item dropdown ms-lg-3">
+            <a class="nav-link dropdown-toggle d-flex align-items-center px-2 py-1"
+               href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+
+              {% if user.studentprofile and user.studentprofile.profile_image %}
+                <img src="{{ user.studentprofile.profile_image.url }}" alt="Profile Picture"
+                     class="rounded-circle border border-2 border-light me-2" width="34" height="34" style="object-fit: cover;">
+              {% elif user.staffprofile and user.staffprofile.profile_image %}
+                <img src="{{ user.staffprofile.profile_image.url }}" alt="Profile Picture"
+                     class="rounded-circle border border-2 border-light me-2" width="34" height="34" style="object-fit: cover;">
+              {% endif %}
+
+              <div class="d-flex flex-column align-items-start">
+                <div class="fw-semibold text-light" style="font-size: 13px;">{{ user.get_full_name|default:user.username }}</div>
+                <small class="text-warning text-capitalize" style="font-size: 11px;">
+                  {% if user.staffprofile %}
+                    {{ user.staffprofile.get_role_display }}
+                  {% else %}
+                    Student
+                  {% endif %}
+                </small>
+              </div>
+            </a>
+
+           <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userDropdown">
+  <li>
+    <a class="dropdown-item d-flex align-items-center" href="{% url 'profile_settings' %}">
+      <i class="fa fa-user-cog me-2 text-secondary"></i>
+      Profile Settings
+    </a>
+  </li>
+  <li>
+    <a class="dropdown-item text-danger d-flex align-items-center" href="{% url 'logout' %}">
+      <i class="fa fa-sign-out-alt me-2"></i>
+      Logout
+    </a>
+  </li>
+</ul>
+
+          </li>
+
+        {% else %}
+          <!-- GUEST USERS -->
+          <li class="nav-item"><a href="{% url 'login' %}" class="nav-link hover-underline">Login</a></li>
+          <li class="nav-item"><a href="{% url 'signup' %}" class="nav-link hover-underline">Sign Up</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+<style>
+
+.hover-underline {
+  position: relative;
+}
+
+.hover-underline::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: #16014cff;
+  transition: width 0.3s ease;
+}
+
+.hover-underline:hover::after {
+  width: 100%;
+}
+
+.dropdown-menu-dark {
+  background-color: #1f2937;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.dropdown-menu-dark .dropdown-item {
+  color: #e5e7eb;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dropdown-menu-dark .dropdown-item:hover {
+  background-color: #facc15;
+  color: #111827;
+}
+
+.navbar-brand {
+  font-size: 1.25rem;
+  letter-spacing: 0.3px;
+}
+
+/* 🟡 Dropdown arrow beside Super Admin */
+.dropdown-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #facc15;
+  transition: transform 0.3s ease;
+}
+
+/* Rotate arrow when dropdown is open */
+.show > .dropdown-toggle .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Smaller screen tweaks */
+@media (max-width: 991px) {
+  .dropdown-arrow {
+    margin-left: 4px;
+  }
+}
+
+</style>
+
+
+<style>
+  .navbar .dropdown-toggle::after {
+  display: none; 
+}
+.user-dropdown {
+  background-color: rgba(0, 2, 109, 0.1);
+  border-radius: 8px;
+  margin-left: 8px;
+  transition: background 0.3s ease;
+}
+
+.user-dropdown:hover {
+  background-color: rgba(255, 193, 7, 0.2);
+}
+
+.user-avatar {
+  flex-shrink: 0;
+}
+
+.fallback-info div,
+.fallback-info small {
+  line-height: 1.1;
+}
+
+.navbar .dropdown-menu {
+  background-color: #1c1c1c;
+  border: none;
+  border-radius: 10px;
+  min-width: 180px;
+}
+
+.navbar .dropdown-item {
+  color: #f8f9fa;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.navbar .dropdown-item:hover {
+  background-color: #cacaca;
+  color: #000;
+}
+
+.navbar .dropdown-menu {
+  background-color: #ebeaea;
+  border: none;
+  border-radius: 10px;
+  min-width: 180px;
+}
+
+.navbar .dropdown-item {
+  color: #000000;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.navbar .dropdown-item:hover {
+  background-color: #f8f8f8;
+  color: #000;
+}
+
+.navbar .dropdown-menu hr {
+  border-color: #444;
+}
+
+  /* Smooth half-underline hover effect */
+.nav-link.hover-underline {
+  position: relative;
+  display: inline-block;
+  color: #f8f8f8;
+  text-decoration: none;
+  padding-bottom: 3px;
+  transition: color 0.3s ease;
+}
+
+.nav-link.hover-underline::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 2px;
+  left: 50%;
+  bottom: 0;
+  background-color:  #f8f8f8;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link.hover-underline:hover::after {
+  width: 50%;
+}
+
+.nav-link.hover-underline:hover {
+  color:  #f8f8f8;
+}
+
+</style>
+
+<main class="flex-grow-1 container my-4">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% block content %}{% endblock %}
+
+</main>
+
+
+
+<footer class="text-light py-3 mt-auto" 
+style="background: linear-gradient(90deg, #00264d, #001a33);">
+<div class="container text-center small">
+<h6 class="mb-1">&copy; {{ current_year|default:2025 }} Transcript Portal</h6>
+<p class="mb-0" style="color: #f0f0f0;">Developed by Metascholar</p>
+</div>
+</footer>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Hide the loader when the page is ready
+  function hideSiteLoader() {
+    const el = document.getElementById('site-loader');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(() => { el.style.display = 'none'; el.setAttribute('aria-hidden','true'); }, 300);
+  }
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    hideSiteLoader();
+  } else {
+    document.addEventListener('DOMContentLoaded', hideSiteLoader);
+  }
+</script>
+</body>
+</html>

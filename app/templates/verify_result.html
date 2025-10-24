@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Transcript Verification{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card shadow-sm">
+        <div class="card-header {% if valid %}bg-success{% else %}bg-danger{% endif %} text-white">
+          <h5 class="mb-0">Transcript Verification</h5>
+        </div>
+
+        <div class="card-body">
+          <div class="alert {% if valid %}alert-success{% else %}alert-danger{% endif %}">
+            {% if valid %}
+              <i class="fas fa-check-circle"></i> {{ message }}
+            {% else %}
+              <i class="fas fa-times-circle"></i> {{ message }}
+            {% endif %}
+          </div>
+
+          <h5>Student Details</h5>
+          <table class="table table-bordered">
+            <tr><th>Name</th><td>{{ transcript_request.student.name }}</td></tr>
+            <tr><th>Index Number</th><td>{{ transcript_request.student.index_number }}</td></tr>
+            <tr><th>Program</th><td>{{ transcript_request.student.program.name }}</td></tr>
+            <tr><th>Department</th><td>{{ transcript_request.student.department.department }}</td></tr>
+            <tr><th>Reference Code</th><td><code>{{ transcript_request.reference_code }}</code></td></tr>
+            <tr><th>Transcript Type</th><td>{{ transcript_request.get_transcript_type_display }}</td></tr>
+            <tr><th>Status</th><td>
+              {% if valid %}
+                <span class="badge bg-success">Approved</span>
+              {% else %}
+                <span class="badge bg-warning">Pending</span>
+              {% endif %}
+            </td></tr>
+          </table>
+
+          {% if transcript_request.transcript_type == 'unofficial' and faculty_registrar %}
+          <div class="card mt-3">
+            <div class="card-header">Faculty Registrar</div>
+            <div class="card-body row">
+              <div class="col-md-6">
+                <strong>Name:</strong> {{ faculty_registrar.name }}<br>
+                <strong>Faculty:</strong> {{ faculty_registrar.faculty_name }}
+              </div>
+              <div class="col-md-6">
+                {% if faculty_registrar.signature %}
+                  <img src="{{ faculty_registrar.signature.url }}" alt="Signature" class="img-fluid" style="max-height: 100px;">
+                {% else %}
+                  <span class="text-muted">No signature available</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+    {% if pdf_url %}
+  <div class="mt-4">
+    <h5>Official Transcript Preview</h5>
+    <iframe src="{{ pdf_url }}" width="100%" height="600px" style="border:none;"></iframe>
+  </div>
+{% endif %}
+
+
+          <div class="mt-4 text-center">
+            <h6>Features of an Authentic Transcript</h6>
+            <img src="{{ features_img }}" class="img-fluid" alt="Authentic Features" style="max-height: 250px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

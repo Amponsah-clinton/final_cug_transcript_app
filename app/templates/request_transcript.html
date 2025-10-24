@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+/* === Pay Now Button Styling === */
+.button {
+  position: relative;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+  padding-block: 0.6rem;
+  padding-inline: 1.5rem;
+  background-color: rgb(255, 255, 255);
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #000000;
+  gap: 10px;
+  font-weight: bold;
+  border: 3px solid #ffffff4d;
+  outline: none;
+  overflow: hidden;
+  font-size: 15px;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  transition: all 0.3s ease-in-out;
+}
+
+.button:hover {
+  transform: scale(1.05);
+  border-color: #fff9;
+}
+
+.button:hover .icon {
+  transform: translate(4px);
+}
+
+.button:hover::before {
+  animation: shine 1.5s ease-out infinite;
+}
+
+.button::before {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100%;
+  background-image: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0) 70%
+  );
+  top: 0;
+  left: -100px;
+  opacity: 0.6;
+}
+
+@keyframes shine {
+  0% {
+    left: -100px;
+  }
+
+  60% {
+    left: 100%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .card {
+    margin: 0 1rem;
+  }
+  .button {
+    width: 100%;
+  }
+}
+</style>
+
+<div class="container py-5 d-flex justify-content-center">
+  <div class="card shadow-lg border-0 rounded-4 w-100" style="max-width: 600px;">
+    <div class="card-header text-center text-white rounded-top-4"
+         style="background: linear-gradient(90deg, rgba(0,69,153,1), rgba(99,166,247,1));">
+      <h4 class="mb-0 fw-semibold">Request Transcript</h4>
+    </div>
+
+    <div class="card-body p-4">
+      <p class="fw-semibold mb-1 text-dark">
+        Official Transcript: <span class="text-success">GHS {{ official_price }}</span> |
+        Unofficial Transcript: <span class="text-success">GHS {{ unofficial_price }}</span>
+      </p>
+
+      {% if not existing_request or not existing_request.payment_made %}
+        {% if not existing_request %}
+          <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary w-100 mt-3">Proceed to Payment</button>
+          </form>
+        {% else %}
+          <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle"></i>
+            Transcript type selected: <strong>{{ existing_request.get_transcript_type_display }}</strong>
+          </div>
+
+          <div class="text-center">
+            <p class="fw-semibold mb-3">
+              Transcript Fee:
+              <span class="text-success">
+                {% if existing_request.transcript_type == 'official' %}
+                  GHS {{ official_price }}
+                {% elif existing_request.transcript_type == 'unofficial' %}
+                  GHS {{ unofficial_price }}
+                {% else %}
+                  GHS 0.00
+                {% endif %}
+              </span>
+            </p>
+
+            <!-- Modern Animated Pay Button -->
+            <button id="payButton" class="btn btn-success btn-lg rounded-pill px-5">
+              <i class="fas fa-credit-card me-2"></i> Pay Now
+            </button>
+          </div>
+
+          <form id="paymentForm" method="POST" style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="reference" id="referenceField">
+          </form>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle me-2"></i>
+          Payment verified! Reference: <strong>{{ existing_request.payment_reference }}</strong>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+document.getElementById('payButton')?.addEventListener('click', function(){
+  const handler = PaystackPop.setup({
+    key: '{{ paystack_public_key }}',
+    email: '{{ user.email }}',
+    amount: {{ amount }},
+    currency: 'GHS',
+    callback: function(response){
+      document.getElementById('referenceField').value = response.reference;
+      document.getElementById('paymentForm').submit();
+    },
+    onClose: function(){
+      alert('Payment window closed.');
+    }
+  });
+  handler.openIframe();
+});
+</script>
+
+
+{% endblock %}

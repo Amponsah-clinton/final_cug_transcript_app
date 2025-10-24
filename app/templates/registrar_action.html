@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Transcript Action{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #eef2f7, #f9fbff);
+    font-family: 'Inter', sans-serif;
+  }
+
+  .card {
+    border: none;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    max-width: 850px;
+    margin: 60px auto;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  h4 {
+    color: #1b3358;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+    letter-spacing: 0.3px;
+  }
+
+  .alert {
+    border-radius: 12px;
+    padding: 18px;
+    background: #f0f6ff;
+    border-left: 5px solid #1b3358;
+    box-shadow: inset 0 0 5px rgba(27, 51, 88, 0.05);
+  }
+
+  .alert strong {
+    color: #1b3358;
+  }
+
+  .btn {
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 14.5px;
+    letter-spacing: 0.4px;
+    transition: all 0.25s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(90deg, #1b3358, #263c6f);
+    border: none;
+  }
+  .btn-primary:hover {
+    background: linear-gradient(90deg, #162846, #1b3358);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-danger {
+    border: 2px solid #dc3545;
+    color: #dc3545;
+    background: transparent;
+  }
+  .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+  }
+  .btn-outline-secondary:hover {
+    background: #6c757d;
+    color: #fff;
+  }
+
+  .btn-warning {
+    background: linear-gradient(90deg, #ffb703, #ff9900);
+    border: none;
+    color: #fff;
+  }
+  .btn-warning:hover {
+    background: linear-gradient(90deg, #e69100, #ff8800);
+    transform: translateY(-1px);
+  }
+
+  .d-flex.gap-3 {
+    gap: 1rem !important;
+  }
+
+  .modal-content {
+    border-radius: 14px;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+
+  .modal-header.bg-danger {
+    background: linear-gradient(90deg, #c1121f, #dc3545);
+  }
+
+  textarea, input[type="file"] {
+    border-radius: 8px;
+    border: 1px solid #d1d9e6;
+    transition: box-shadow 0.2s ease;
+  }
+
+  textarea:focus, input[type="file"]:focus {
+    border-color: #1b3358;
+    box-shadow: 0 0 0 2px rgba(27,51,88,0.2);
+    outline: none;
+  }
+
+  .small.text-muted {
+    font-size: 13px;
+  }
+
+  .fw-semibold {
+    font-weight: 600;
+  }
+
+  /* Button fade animation */
+  button, a.btn {
+    transition: all 0.2s ease-in-out;
+  }
+
+  @media (max-width: 768px) {
+    .card {
+      padding: 25px;
+      margin: 30px 15px;
+    }
+    .d-flex.justify-content-center {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
+
+<div class="card animate__animated animate__fadeInUp">
+  <h4><i class="fas fa-file-alt me-2 text-primary"></i> Registrar Transcript Action</h4>
+
+  <div class="alert alert-info mb-4">
+    <p class="mb-1"><strong>Request Code:</strong> {{ transcript_request.reference_code }}</p>
+    <p class="mb-1"><strong>Student:</strong> {{ transcript_request.student.name }}</p>
+    <p class="mb-1"><strong>Type:</strong> {{ transcript_request.transcript_type|title }} Transcript</p>
+  </div>
+
+  <div class="d-flex justify-content-center flex-wrap gap-3 mt-3">
+    <!-- Preview Transcript -->
+    <a href="{% url 'generate_transcript_preview' transcript_request.id %}" 
+       target="_blank" 
+       class="btn btn-outline-secondary">
+      <i class="fas fa-eye me-1"></i> Preview Transcript
+    </a>
+
+    <!-- Upload & Process (Registrar) -->
+    <a href="{% url 'registrar_upload_transcript' transcript_request.id %}" class="btn btn-outline-secondary">
+      <i class="fas fa-upload me-1"></i> Upload & Process
+    </a>
+
+    <!-- Approve -->
+    <form method="post" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="approve">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-check-circle me-1"></i> Approve
+      </button>
+    </form>
+
+    <!-- Disapprove -->
+    <button type="button" class="btn btn-outline-danger" 
+            data-bs-toggle="modal" 
+            data-bs-target="#disapproveModalRegistrar">
+      <i class="fas fa-times-circle me-1"></i> Disapprove
+    </button>
+
+    <!-- Change Faculty for Unofficial -->
+    {% if transcript_request.transcript_type == 'unofficial' %}
+    <div class="ms-2 text-start mt-2">
+      {% if transcript_request.selected_faculty_registrar %}
+        <div class="small text-muted">Current Faculty Registrar:</div>
+        <div class="fw-semibold">{{ transcript_request.selected_faculty_registrar.name }}
+          <small class="text-muted">— {{ transcript_request.selected_faculty_registrar.faculty_name }}</small>
+        </div>
+      {% else %}
+        <div class="small text-muted">No Faculty Registrar selected</div>
+      {% endif %}
+    </div>
+
+    <a href="{% url 'change_faculty_registrar' transcript_request.pk %}" class="btn btn-warning">
+      <i class="fas fa-exchange-alt me-1"></i> Change Faculty
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Disapprove Modal -->
+<div class="modal fade" id="disapproveModalRegistrar" tabindex="-1" aria-labelledby="disapproveModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fas fa-ban me-2"></i> Disapprove Transcript Request</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" name="action" value="reject">
+          <div class="mb-3">
+            <label for="comments" class="form-label fw-semibold">Reason for Disapproval</label>
+            <textarea id="comments" name="comments" class="form-control" rows="4" placeholder="Enter a reason if any..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="attachment" class="form-label fw-semibold">Attach Supporting File</label>
+            <input type="file" id="attachment" name="attachment" class="form-control">
+            <small class="text-muted">Optional — attach any relevant file if needed.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Submit Disapproval</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

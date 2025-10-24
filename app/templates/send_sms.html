@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container text-center mt-5">
+  <h3>Send Test SMS</h3>
+  <button id="sendBtn" class="btn btn-primary mt-3">Send SMS</button>
+  <p id="status" class="mt-3 text-muted"></p>
+</div>
+
+<script>
+document.getElementById("sendBtn").addEventListener("click", () => {
+  document.getElementById("status").textContent = "Sending SMS...";
+  fetch("{% url 'send_sms' %}")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("status").textContent = data.response;
+    })
+    .catch(err => {
+      document.getElementById("status").textContent = "Error sending SMS.";
+    });
+});
+</script>
+{% endblock %}

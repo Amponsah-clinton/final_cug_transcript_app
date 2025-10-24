@@ -1,0 +1,1 @@
+# SMS functionality removed
