@@ -1,6 +1,0 @@
-RewriteEngine On
-
-# Redirect all requests to index.py in the cugtranscript folder
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /cugtranscript/index.py [QSA,L]
