@@ -1,14 +1,14 @@
 RewriteEngine On
 
 # Handle static files
-RewriteCond %{REQUEST_URI} ^/cugtranscript/static/(.*)$
+RewriteCond %{REQUEST_URI} ^/static/(.*)$
 RewriteRule ^static/(.*)$ /cugtranscript/static/$1 [L]
 
 # Handle media files
-RewriteCond %{REQUEST_URI} ^/cugtranscript/media/(.*)$
+RewriteCond %{REQUEST_URI} ^/media/(.*)$
 RewriteRule ^media/(.*)$ /cugtranscript/media/$1 [L]
 
-# Redirect all other requests within cugtranscript to app.py
+# Redirect all other requests to index.py
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /cugtranscript/app.py [QSA,L]
+RewriteRule ^(.*)$ /cugtranscript/index.py [QSA,L]

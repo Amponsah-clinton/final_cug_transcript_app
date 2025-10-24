@@ -4,7 +4,7 @@ import sys
 import cgi
 import cgitb
 
-# Enable CGI debugging for troubleshooting
+# Enable CGI debugging
 cgitb.enable()
 
 # Add the project directory to Python path
@@ -21,13 +21,8 @@ application = get_wsgi_application()
 # CGI handler for Hostinger
 def main():
     try:
-        # Get the path from the URL and remove the subfolder prefix
+        # Get the path from the URL
         path_info = os.environ.get('PATH_INFO', '/')
-        # Remove /cugtranscript prefix if it exists
-        if path_info.startswith('/cugtranscript'):
-            path_info = path_info[13:]  # Remove '/cugtranscript' (13 characters)
-        if not path_info:
-            path_info = '/'
         
         # Set up environment variables for Django
         os.environ['REQUEST_METHOD'] = os.environ.get('REQUEST_METHOD', 'GET')
