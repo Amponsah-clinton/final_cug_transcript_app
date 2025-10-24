@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Enable Python CGI for Hostinger
+AddHandler cgi-script .py
+Options +ExecCGI
+
 # Handle static files
 RewriteCond %{REQUEST_URI} ^/cugtranscript/static/(.*)$
 RewriteRule ^static/(.*)$ /cugtranscript/static/$1 [L]
@@ -8,7 +12,7 @@ RewriteRule ^static/(.*)$ /cugtranscript/static/$1 [L]
 RewriteCond %{REQUEST_URI} ^/cugtranscript/media/(.*)$
 RewriteRule ^media/(.*)$ /cugtranscript/media/$1 [L]
 
-# Redirect all other requests within cugtranscript to app.py
+# Redirect all other requests to app.py
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ /cugtranscript/app.py [QSA,L]
