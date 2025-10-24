@@ -3974,6 +3974,12 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from datetime import datetime
 from .models import Student, TranscriptRequest, TranscriptStatus, Transcript
+from django.http import FileResponse, Http404
+import os
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics import renderPM
+import urllib.parse
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -4012,7 +4018,8 @@ def superadmin_dashboard(request):
     for req in requests_qs:
         latest_status = req.statuses.order_by('-updated_on', '-id').first()
         transcript_obj = getattr(req, 'transcript', None)
-        has_file = transcript_obj and transcript_obj.file
+        # A transcript file may be stored in `file` (generated/merged) or `uploaded_file` (manual uploads).
+        has_file = bool(transcript_obj and (getattr(transcript_obj, 'file', None) or getattr(transcript_obj, 'uploaded_file', None)))
 
         stage_map = {
             'pending': ("Awaiting Review", "info"),
@@ -4024,22 +4031,38 @@ def superadmin_dashboard(request):
         }
         stage_label = stage_map.get(latest_status.stage if latest_status else '', ("Processing", "dark"))
 
+        # Prefer the merged/generated `file` field; fall back to `uploaded_file` when present.
+        transcript_file_url = None
+        if transcript_obj:
+            try:
+                if getattr(transcript_obj, 'file', None):
+                    transcript_file_url = transcript_obj.file.url
+                elif getattr(transcript_obj, 'uploaded_file', None):
+                    transcript_file_url = transcript_obj.uploaded_file.url
+            except Exception:
+                transcript_file_url = None
+
         requests_data.append({
-    'id': req.id,
-    'student_name': req.student.name if req.student else '—',
-    'index_number': req.student.index_number if req.student else '—',
-    'transcript_type': req.transcript_type or '—',
-    'date_requested': req.date_requested,
-    'stage_label': stage_label[0],
-    'stage_badge': stage_label[1],
-    'download_ready': has_file,
-    'transcript_file': transcript_obj.file.url if has_file else None,
-})
+            'id': req.id,
+            'student_name': req.student.name if req.student else '—',
+            'index_number': req.student.index_number if req.student else '—',
+            'transcript_type': req.transcript_type or '—',
+            'date_requested': req.date_requested,
+            'stage_label': stage_label[0],
+            'stage_badge': stage_label[1],
+            'download_ready': bool(transcript_file_url),
+            'transcript_file': transcript_file_url,
+            'transcript_id': getattr(transcript_obj, 'id', None),
+        })
 
     # ====== APPROVED TRANSCRIPTS ======
+    # Only include transcripts whose latest TranscriptStatus.stage is 'approved'.
+    latest_status = TranscriptStatus.objects.filter(transcript_request=OuterRef('transcript_request')).order_by('-updated_on')
     approved_transcripts = (
         Transcript.objects.select_related('transcript_request__student')
-        .filter(transcript_request__statuses__stage='approved', file__isnull=False)
+        .annotate(latest_stage=Subquery(latest_status.values('stage')[:1]))
+        .filter(latest_stage='approved')
+        .filter(Q(file__isnull=False) | Q(uploaded_file__isnull=False))
         .distinct()
         .order_by('-date_generated')
     )
@@ -4056,6 +4079,81 @@ def superadmin_dashboard(request):
     }
 
     return render(request, 'admin/superadmin_dashboard.html', context)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def superadmin_download_transcript(request, pk):
+    """Allow superusers to securely download any transcript (generated or uploaded).
+
+    Serves the file using FileResponse so that media storage permissions don't block access
+    when using direct URLs.
+    """
+    transcript = get_object_or_404(Transcript, pk=pk)
+
+    # Prefer generated/merged file, fall back to uploaded_file
+    file_field = None
+    if getattr(transcript, 'file', None):
+        file_field = transcript.file
+    elif getattr(transcript, 'uploaded_file', None):
+        file_field = transcript.uploaded_file
+
+    if not file_field:
+        messages.error(request, "Transcript file not available for download.")
+        return redirect('superadmin_dashboard')
+
+    try:
+        file_path = file_field.path
+    except Exception:
+        # Some storages (S3, etc.) may not provide a local path. Try to open via storage.
+        try:
+            fh = file_field.open('rb')
+            response = HttpResponse(fh.read(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{transcript.transcript_request.reference_code}.pdf"'
+            fh.close()
+            return response
+        except Exception:
+            raise Http404("File not found")
+
+    if not os.path.exists(file_path):
+        raise Http404("File not found")
+
+    filename = f"{transcript.transcript_request.reference_code}.pdf"
+    response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def superadmin_transcript_qr(request, pk):
+    """Return a PNG QR code for the transcript verification URL for a given Transcript id.
+
+    Uses ReportLab's QrCodeWidget and renderPM to produce a PNG image.
+    """
+    transcript = get_object_or_404(Transcript, pk=pk)
+    tr_request = getattr(transcript, 'transcript_request', None)
+    if not tr_request:
+        raise Http404("Transcript request not found")
+
+    # Build verification code used by verify view: index + cleaned reference
+    index = getattr(getattr(tr_request, 'student', None), 'index_number', '')
+    ref = tr_request.reference_code or ''
+    ref_clean = urllib.parse.quote_plus(ref)
+
+    base_url = request.build_absolute_uri('/')[:-1]
+    code = f"{index}{ref_clean}"
+    encoded = urllib.parse.quote(code, safe='')
+    verify_url = f"{base_url}/verify/{encoded}/"
+
+    try:
+        qr = QrCodeWidget(verify_url)
+        size = 200
+        d = Drawing(size, size)
+        d.add(qr)
+        png = renderPM.drawToString(d, fmt='PNG')
+        return HttpResponse(png, content_type='image/png')
+    except Exception as e:
+        # As a fallback, return 404
+        raise Http404("QR generation failed")
 
 
 # ====== EXPORT TO EXCEL ======

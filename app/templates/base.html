@@ -181,26 +181,34 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
   <div class="container">
-<a class="navbar-brand fw-bold text-warning" 
-   href="{% if user.is_authenticated and user.is_staff %}{% url 'staff_dashboard' %}
-          {% elif user.is_authenticated %}{% url 'student_dashboard' %}
-          {% else %}{% url 'landing_page' %}{% endif %}">
-  <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1756722559/catholic-university-ghana-logo_onhrgj.jpg" 
-       alt="Logo" 
-       style="height:45px; width:45px; border-radius:50%; object-fit:cover; background:white; padding:3px; margin-right:8px;">
-  Transcript Portal
-</a>
 
+    <!-- Logo + Portal Name -->
+    <a class="navbar-brand fw-bold text-warning d-flex align-items-center" 
+       href="{% if user.is_authenticated and user.is_staff %}
+                {% url 'staff_dashboard' %}
+              {% elif user.is_authenticated %}
+                {% url 'student_dashboard' %}
+              {% else %}
+                {% url 'landing_page' %}
+              {% endif %}">
+      <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1756722559/catholic-university-ghana-logo_onhrgj.jpg" 
+           alt="Logo" 
+           style="height:45px; width:45px; border-radius:50%; object-fit:cover; background:white; padding:3px; margin-right:8px;">
+      Transcript Portal
+    </a>
 
+    <!-- Mobile Toggle -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navmenu"
             aria-controls="navmenu" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
+    <!-- Navbar Links -->
     <div class="collapse navbar-collapse" id="navmenu">
       <ul class="navbar-nav ms-auto align-items-lg-center flex-column flex-lg-row">
 
         {% if user.is_authenticated %}
+
           <!-- STUDENT LINKS -->
           {% if not user.is_staff %}
             <li class="nav-item"><a href="{% url 'student_dashboard' %}" class="nav-link hover-underline">My Dashboard</a></li>
@@ -208,7 +216,7 @@
             <li class="nav-item"><a href="{% url 'student_approved_transcripts' %}" class="nav-link hover-underline">Approved Transcripts</a></li>
           {% endif %}
 
-          <!-- STAFF ROLES -->
+          <!-- STAFF LINKS -->
           {% if user.role == 'exams_office' %}
             <li class="nav-item"><a href="{% url 'manage_students' %}" class="nav-link hover-underline">Manage Students</a></li>
             <li class="nav-item"><a href="{% url 'generate_transcript_preview' pk=1 %}" class="nav-link hover-underline">Preview Transcript</a></li>
@@ -234,90 +242,95 @@
             <li class="nav-item"><a href="{% url 'registrar_reapprove' request_id=1 %}" class="nav-link hover-underline">Reapprove Transcript</a></li>
           {% endif %}
 
-        {% if user.is_superuser %}
-  <!-- Visible Superadmin Items -->
-  <li class="nav-item">
-    <a href="{% url 'create_staff' %}" class="nav-link hover-underline">Create Staff</a>
-  </li>
-  <li class="nav-item">
-    <a href="{% url 'upload_students' %}" class="nav-link hover-underline">Upload Students</a>
-  </li>
+          <!-- SUPERUSER MENU -->
+          {% if user.is_superuser %}
+            <li class="nav-item"><a href="{% url 'create_staff' %}" class="nav-link hover-underline">Create Staff</a></li>
+            <li class="nav-item"><a href="{% url 'upload_students' %}" class="nav-link hover-underline">Upload Students</a></li>
 
-  <!-- Dropdown for Faculty / Department Management -->
-  <li class="nav-item dropdown position-relative">
-    <a class="nav-link dropdown-toggle text-warning fw-semibold d-flex align-items-center"
-       href="#" id="superadminDropdown"
-       role="button" data-bs-toggle="dropdown" aria-expanded="false">
-      Manage Setup
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-           class="bi bi-caret-down-fill ms-1" viewBox="0 0 16 16">
-        <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
-      </svg>
-    </a>
-<ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="superadminDropdown">
-  <li><a class="dropdown-item" href="{% url 'manage_faculty_registrars' %}">Faculty Registrars</a></li>
-  <li><a class="dropdown-item" href="{% url 'manage_transcript_types' %}">Transcript Types</a></li>
-  <li><a class="dropdown-item" href="{% url 'manage_departments' %}">Departments</a></li>
-  <li><a class="dropdown-item" href="{% url 'manage_programs' %}">Programs</a></li>
-  <li><a class="dropdown-item" href="{% url 'manage_students' %}">Manage Students</a></li>
-  <li><a class="dropdown-item" href="{% url 'add_contact' %}">Manage Contacts</a></li>
+            <li class="nav-item dropdown position-relative">
+              <a class="nav-link dropdown-toggle text-warning fw-semibold d-flex align-items-center"
+                 href="#" id="superadminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Manage Setup
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                     class="bi bi-caret-down-fill ms-1" viewBox="0 0 16 16">
+                  <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                </svg>
+              </a>
 
-  <li><hr class="dropdown-divider"></li>
+              <ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="superadminDropdown">
+                <li><a class="dropdown-item" href="{% url 'manage_faculty_registrars' %}">Faculty Registrars</a></li>
+                <li><a class="dropdown-item" href="{% url 'manage_transcript_types' %}">Transcript Types</a></li>
+                <li><a class="dropdown-item" href="{% url 'manage_departments' %}">Departments</a></li>
+                <li><a class="dropdown-item" href="{% url 'manage_programs' %}">Programs</a></li>
+                <li><a class="dropdown-item" href="{% url 'manage_students' %}">Manage Students</a></li>
+                <li><a class="dropdown-item" href="{% url 'add_contact' %}">Manage Contacts</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'manage_whatsapp_groups' %}">WhatsApp Groups</a></li>
+                <li><a class="dropdown-item" href="{% url 'manual_verify' %}">Verify Transcript</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'staff_profile_list' %}">Manage Staff Profiles</a></li>
+              </ul>
+            </li>
+          {% endif %}
 
-  <li><a class="dropdown-item" href="{% url 'manage_whatsapp_groups' %}">WhatsApp Groups</a></li>
-  <li><a class="dropdown-item" href="{% url 'manual_verify' %}">Verify Transcript</a></li>
-
-  <!-- New section for staff management -->
-  <li><hr class="dropdown-divider"></li>
-  <li><a class="dropdown-item" href="{% url 'staff_profile_list' %}">Manage Staff Profiles</a></li>
-</ul>
-
-  </li>
-{% endif %}
-
+          <!-- USER PROFILE DROPDOWN -->
           <li class="nav-item dropdown ms-lg-3">
-            <a class="nav-link dropdown-toggle d-flex align-items-center px-2 py-1"
+            <a class="nav-link d-flex align-items-center px-2 py-1"
                href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-
+               
               {% if user.studentprofile and user.studentprofile.profile_image %}
-                <img src="{{ user.studentprofile.profile_image.url }}" alt="Profile Picture"
-                     class="rounded-circle border border-2 border-light me-2" width="34" height="34" style="object-fit: cover;">
+                <img src="{{ user.studentprofile.profile_image.url }}" class="rounded-circle border border-2 border-light me-2"
+                     width="34" height="34" style="object-fit: cover;">
               {% elif user.staffprofile and user.staffprofile.profile_image %}
-                <img src="{{ user.staffprofile.profile_image.url }}" alt="Profile Picture"
-                     class="rounded-circle border border-2 border-light me-2" width="34" height="34" style="object-fit: cover;">
+                <img src="{{ user.staffprofile.profile_image.url }}" class="rounded-circle border border-2 border-light me-2"
+                     width="34" height="34" style="object-fit: cover;">
+              {% else %}
+                <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                     class="rounded-circle border border-2 border-light me-2"
+                     width="34" height="34" style="object-fit: cover;">
               {% endif %}
 
-              <div class="d-flex flex-column align-items-start">
-                <div class="fw-semibold text-light" style="font-size: 13px;">{{ user.get_full_name|default:user.username }}</div>
-                <small class="text-warning text-capitalize" style="font-size: 11px;">
-                  {% if user.staffprofile %}
-                    {{ user.staffprofile.get_role_display }}
-                  {% else %}
-                    Student
-                  {% endif %}
-                </small>
+              <div class="d-flex flex-column align-items-start me-2">
+                <div class="fw-semibold text-light" style="font-size: 13px;">
+                  {{ user.get_full_name|default:user.username }}
+                </div>
+                {% if not user.is_superuser %}
+                  <small class="text-warning text-capitalize" style="font-size: 11px;">
+                    {% if user.staffprofile %}
+                      {{ user.staffprofile.get_role_display }}
+                    {% else %}
+                      Student
+                    {% endif %}
+                  </small>
+                {% endif %}
               </div>
+
+              <!-- Dropdown Arrow -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                   fill="currentColor" class="bi bi-caret-down-fill text-light"
+                   viewBox="0 0 16 16" style="margin-top: 2px;">
+                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 
+                         .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+              </svg>
             </a>
 
-           <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userDropdown">
-  <li>
-    <a class="dropdown-item d-flex align-items-center" href="{% url 'profile_settings' %}">
-      <i class="fa fa-user-cog me-2 text-secondary"></i>
-      Profile Settings
-    </a>
-  </li>
-  <li>
-    <a class="dropdown-item text-danger d-flex align-items-center" href="{% url 'logout' %}">
-      <i class="fa fa-sign-out-alt me-2"></i>
-      Logout
-    </a>
-  </li>
-</ul>
-
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm mt-2" aria-labelledby="userDropdown" style="min-width: 180px;">
+              <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'profile_settings' %}">
+                  <i class="fa fa-user-cog me-2 text-secondary"></i> Profile Settings
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item text-danger d-flex align-items-center" href="{% url 'logout' %}">
+                  <i class="fa fa-sign-out-alt me-2"></i> Logout
+                </a>
+              </li>
+            </ul>
           </li>
 
         {% else %}
-          <!-- GUEST USERS -->
+          <!-- GUEST LINKS -->
           <li class="nav-item"><a href="{% url 'login' %}" class="nav-link hover-underline">Login</a></li>
           <li class="nav-item"><a href="{% url 'signup' %}" class="nav-link hover-underline">Sign Up</a></li>
         {% endif %}
@@ -325,6 +338,33 @@
     </div>
   </div>
 </nav>
+<style>
+.navbar .dropdown-toggle::after {
+  display: none !important; /* Hide Bootstrap’s default arrow */
+}
+
+.navbar .dropdown-menu {
+  border-radius: 10px;
+  padding: 6px 0;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.navbar .dropdown-item:hover {
+  background-color: #ffc10720;
+  color: #ffc107 !important;
+  transition: 0.2s ease-in-out;
+}
+
+.navbar .nav-link:hover {
+  color: #ffc107 !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
 <style>
 
 .hover-underline {

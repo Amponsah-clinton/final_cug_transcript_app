@@ -208,7 +208,10 @@ body {
               <td>{{ item.date_requested|date:"M d, Y H:i" }}</td>
               <td><span class="badge bg-{{ item.stage_badge }}">{{ item.stage_label }}</span></td>
               <td>
-                {% if item.download_ready %}
+                {% if item.download_ready and item.transcript_id %}
+                  <a href="{% url 'superadmin_download_transcript' item.transcript_id %}" class="btn btn-outline-success">Download</a>
+                {% elif item.download_ready and item.transcript_file %}
+                  {# Fallback to direct URL if present (should be rare) #}
                   <a href="{{ item.transcript_file }}" target="_blank" class="btn btn-outline-success">Download</a>
                 {% else %}
                   <span class="empty-text">Not Ready</span>
@@ -287,6 +290,8 @@ body {
               <th>Student</th>
               <th>Transcript ID</th>
               <th>Date Generated</th>
+              <th>QR</th>
+              <th>Signatures</th>
               <th>Download</th>
               <th>Details</th>
             </tr>
@@ -299,8 +304,22 @@ body {
               <td>{{ trans.transcript_id }}</td>
               <td>{{ trans.date_generated|date:"M d, Y H:i" }}</td>
               <td>
-                {% if trans.file %}
-                  <a href="{{ trans.file.url }}" target="_blank" class="btn btn-outline-success">Download</a>
+                {% if trans.id %}
+                  <img src="{% url 'superadmin_transcript_qr' trans.id %}" alt="QR" style="width:80px;height:80px;border:1px solid #e5e7eb;border-radius:6px;" />
+                {% else %}
+                  <span class="empty-text">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <span class="badge {% if trans.registrar_signature %}bg-success{% else %}bg-secondary{% endif %}">Registrar</span>
+                  <span class="badge {% if trans.dean_signature %}bg-success{% else %}bg-secondary{% endif %}">Dean</span>
+                  <span class="badge {% if trans.vc_signature %}bg-success{% else %}bg-secondary{% endif %}">VC</span>
+                </div>
+              </td>
+              <td>
+                {% if trans.id %}
+                  <a href="{% url 'superadmin_download_transcript' trans.id %}" class="btn btn-outline-success">Download</a>
                 {% else %}
                   <span class="empty-text">No File</span>
                 {% endif %}
