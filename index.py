@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-import cgi
-import cgitb
-
-# Enable CGI debugging (remove in production)
-cgitb.enable()
 
 # Add the project directory to Python path
 project_dir = os.path.dirname(os.path.abspath(__file__))
@@ -18,37 +13,24 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcript_project.settings')
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 
-# CGI handler
-def main():
-    # Get the path from the URL
-    path_info = os.environ.get('PATH_INFO', '/')
-    
-    # Set up CGI environment
-    os.environ['REQUEST_METHOD'] = os.environ.get('REQUEST_METHOD', 'GET')
-    os.environ['QUERY_STRING'] = os.environ.get('QUERY_STRING', '')
-    
-    # Call Django application
-    try:
-        from django.core.handlers.wsgi import WSGIHandler
-        handler = WSGIHandler()
-        response = handler.get_response(None)
-        
-        # Print headers
-        print("Content-Type: text/html")
-        print("Status: 200 OK")
-        print()
-        
-        # Print response content
-        if hasattr(response, 'content'):
-            print(response.content.decode('utf-8'))
-        else:
-            print(str(response))
-            
-    except Exception as e:
-        print("Content-Type: text/html")
-        print("Status: 500 Internal Server Error")
-        print()
-        print(f"<h1>Error: {str(e)}</h1>")
+# Simple CGI handler
+print("Content-Type: text/html")
+print()
+print("<h1>Django App is Working!</h1>")
+print("<p>If you can see this, the Python setup is working.</p>")
+print("<p>Now let's test Django...</p>")
 
-if __name__ == '__main__':
-    main()
+try:
+    # Test Django
+    from django.core.handlers.wsgi import WSGIHandler
+    handler = WSGIHandler()
+    print("<p>Django handler created successfully!</p>")
+    
+    # Try to get a simple response
+    from django.http import HttpResponse
+    response = HttpResponse("<h1>Django is working!</h1><p>Your app is ready!</p>")
+    print(response.content.decode('utf-8'))
+    
+except Exception as e:
+    print(f"<h2>Error: {str(e)}</h2>")
+    print("<p>Check your Django settings and file structure.</p>")
