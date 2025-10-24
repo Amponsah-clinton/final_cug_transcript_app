@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from .import views
 from . import batch_views
 from django.contrib.auth import views as auth_views
 from .forms import ResetPasswordForm, ResetPasswordConfirmForm
