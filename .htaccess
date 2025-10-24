@@ -1,14 +1,22 @@
 RewriteEngine On
 
+# Enable Python CGI
+AddHandler cgi-script .py
+
 # Handle static files
 RewriteCond %{REQUEST_URI} ^/static/(.*)$
 RewriteRule ^static/(.*)$ /static/$1 [L]
 
-# Handle media files
+# Handle media files  
 RewriteCond %{REQUEST_URI} ^/media/(.*)$
 RewriteRule ^media/(.*)$ /media/$1 [L]
 
-# Handle Django URLs
+# Handle Django URLs - redirect everything to cgi-bin/index.py
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /index.py/$1 [QSA,L]
+RewriteRule ^(.*)$ /cgi-bin/index.py/$1 [QSA,L]
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"

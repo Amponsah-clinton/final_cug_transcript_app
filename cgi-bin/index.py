@@ -4,12 +4,12 @@ import sys
 import cgi
 import cgitb
 
-# Enable CGI debugging (remove in production)
+# Enable CGI debugging
 cgitb.enable()
 
-# Add the project directory to Python path
-project_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, project_dir)
+# Add the parent directory to Python path
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
 
 # Set Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcript_project.settings')
