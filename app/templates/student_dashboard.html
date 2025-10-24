@@ -376,22 +376,39 @@
     </div>
   {% endif %}
 </div>
-  <!-- Transcript Requests -->
- {% if requests_data %}
-<div class="card shadow-sm border-0 rounded-4 mb-5 overflow-hidden">
-  <div class="card-header bg-gradient bg-primary text-white py-3">
-    <h5 class="fw-bold mb-0 text-center">
-      <i class="fas fa-file-alt me-2"></i>Your Transcript Requests
-    </h5>
+{% if requests_data %}
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-5 bg-light bg-opacity-50 backdrop-blur-sm">
+  <div class="card-header bg-gradient text-white text-center py-3 rounded-top-4" 
+       style="background: linear-gradient(135deg, #0d6efd, #6610f2);">
+<h5 class="fw-bold mb-0 gradient-text">
+  Your Transcript Requests
+</h5>
+<style>
+  .gradient-text {
+  background: linear-gradient(90deg, #ff6a00, #ee0979, #7f00ff, #00d4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientMove 5s ease infinite;
+  background-size: 300% 300%;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+</style>
   </div>
 
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 text-center">
-        <thead class="table-light border-bottom">
-          <tr class="text-primary small text-uppercase">
+      <table class="table align-middle mb-0 text-center table-hover">
+        <thead class="text-uppercase small fw-semibold" 
+               style="background: rgba(245, 247, 250, 0.9);">
+          <tr class="text-primary">
             <th>#</th>
-            <th>Transcript Type</th>
+            <th>Type</th>
             <th>Reference</th>
             <th>Date Requested</th>
             <th>Payment</th>
@@ -400,130 +417,100 @@
             <th>Details</th>
           </tr>
         </thead>
-        <tbody>
+
+        <tbody class="bg-white">
           {% for item in requests_data %}
           {% with req=item.request %}
-          <tr>
-            <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
-            <td>{{ req.get_transcript_type_display }}</td>
+          <tr class="border-bottom">
+            <td class="text-muted fw-semibold">{{ forloop.counter }}</td>
+            <td class="fw-semibold">{{ req.get_transcript_type_display }}</td>
             <td><code class="text-primary fw-semibold">{{ req.reference_code }}</code></td>
             <td>{{ req.date_requested|date:"M d, Y h:i A" }}</td>
 
-            <td class="text-start align-middle">
+            <!-- PAYMENT STATUS -->
+            <td>
               {% if req.transcript_type == 'unofficial' %}
-                <div>
-                  <span class="badge rounded-pill bg-success px-3 py-1">Paid &amp; Cleared</span>
-                  <div class="small text-muted mt-1">Unofficial transcripts are processed without fee holds.</div>
-                </div>
+                <span class="badge bg-success bg-gradient px-3 py-2 shadow-sm">Paid & Cleared</span>
               {% elif item.payment_badge == "warning" %}
-                <div>
-                  <span style="color: white !important;" class="badge rounded-pill bg-danger text-dark px-3 py-1">{{ item.payment_label }}</span>
-                  {% if item.request.fee_clearance and item.request.fee_clearance.amount_owed %}
-                    <!-- <div class="small fw-semibold mt-1">Due: GHS {{ item.request.fee_clearance.amount_owed }}</div> -->
-                  {% endif %}
-                  <div class="d-flex flex-wrap gap-1 mt-2">
-                    <a href="{% url 'download_invoice' item.request.id %}" class="btn btn-outline-primary btn-sm d-flex align-items-center">
-                      <i class="fas fa-file-invoice me-1 small"></i>Invoice
-                    </a>
-                    <a href="{% url 'notify_payment_made' item.request.id %}" class="btn btn-success btn-sm d-flex align-items-center">
-                      <i class="fas fa-bell me-1 small"></i>Notify
-                    </a>
-                  </div>
+                <span class="badge bg-danger bg-gradient px-3 py-2 shadow-sm">{{ item.payment_label }}</span>
+                <div class="mt-2 d-flex gap-2 justify-content-center flex-wrap">
+                  <a href="{% url 'download_invoice' req.id %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                    <i class="fas fa-file-invoice me-1"></i>Invoice
+                  </a>
+                  <a href="{% url 'notify_payment_made' req.id %}" class="btn btn-sm btn-success rounded-pill">
+                    <i class="fas fa-bell me-1"></i>Notify
+                  </a>
                 </div>
               {% elif item.payment_badge == "info" %}
-                <div>
-                  <span class="badge rounded-pill bg-info text-dark px-3 py-1">{{ item.payment_label }}</span>
-                  <div class="small text-muted mt-1">Payment received — pending Accounts verification.</div>
-                </div>
+                <span class="badge bg-info text-dark px-3 py-2 shadow-sm">{{ item.payment_label }}</span>
               {% elif item.payment_badge == "success" %}
-                <div>
-                  <span class="badge rounded-pill bg-success px-3 py-1">{{ item.payment_label }}</span>
-                  <div class="small text-muted mt-1">Verified — now processing.</div>
-                </div>
+                <span class="badge bg-success bg-gradient px-3 py-2 shadow-sm">{{ item.payment_label }}</span>
               {% elif item.payment_badge == "secondary" %}
-                <div>
-                  <span class="badge rounded-pill bg-secondary px-3 py-1">{{ item.payment_label }}</span>
-                  <div class="small text-muted mt-1">Under review.</div>
-                </div>
+                <span class="badge bg-secondary bg-gradient px-3 py-2 shadow-sm">{{ item.payment_label }}</span>
               {% else %}
-                <div>
-                  <span class="badge rounded-pill bg-light text-muted px-3 py-1">{{ item.payment_label }}</span>
-                </div>
+                <span class="badge bg-light text-muted px-3 py-2">{{ item.payment_label }}</span>
               {% endif %}
             </td>
 
+            <!-- PROCESSING STATUS -->
             <td>
-              {% if item.processing_badge == "danger" %}
-                <div class="d-flex flex-column align-items-center gap-1">
-                  <span class="badge rounded-pill bg-danger px-3 py-1">
-                    {{ item.processing_label }}
-                  </span>
-
-                  {% if item.latest_status and item.latest_status.remarks %}
-                    <button class="btn btn-outline-danger btn-xs" data-bs-toggle="modal"
-                            data-bs-target="#remarksModal{{ req.id }}">
-                      <i class="fas fa-eye me-1 small"></i>View Details
-                    </button>
-                  {% endif %}
-                </div>
-              {% elif item.processing_badge == "warning" %}
-                <span class="badge rounded-pill bg-warning text-dark px-3 py-1">{{ item.processing_label }}</span>
-              {% elif item.processing_badge == "primary" %}
-                <span class="badge rounded-pill bg-primary px-3 py-1">{{ item.processing_label }}</span>
-              {% elif item.processing_badge == "success" %}
-                <span class="badge rounded-pill bg-success px-3 py-1">{{ item.processing_label }}</span>
-              {% elif item.processing_badge == "secondary" %}
-                <span class="badge rounded-pill bg-secondary px-3 py-1">{{ item.processing_label }}</span>
-              {% else %}
-                <span class="badge rounded-pill bg-dark text-white px-3 py-1">{{ item.processing_label }}</span>
+              <span class="badge bg-{{ item.processing_badge|default:'secondary' }} bg-gradient px-3 py-2 shadow-sm">
+                {{ item.processing_label }}
+              </span>
+              {% if item.latest_status and item.latest_status.remarks %}
+              <button class="btn btn-outline-danger btn-xs mt-2" data-bs-toggle="modal"
+                      data-bs-target="#remarksModal{{ req.id }}">
+                <i class="fas fa-eye small me-1"></i>View
+              </button>
               {% endif %}
             </td>
 
-       <td>
-  {% if item.download_ready %}
-    <a href="{% url 'student_download_transcript' item.request.id %}"
-       class="btn btn-xs btn-outline-success d-flex align-items-center justify-content-center">
-      <i class="fas fa-download me-1 small"></i>Download
-    </a>
-  {% else %}
-    <span class="text-muted small">Not Ready</span>
-  {% endif %}
-</td>
-
+            <!-- DOWNLOAD -->
             <td>
-              <a href="{% url 'request_detail' req.pk %}" class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-center">
-                <i class="fas fa-info-circle me-1 small"></i>
+              {% if item.download_ready %}
+                <a href="{% url 'student_download_transcript' req.id %}" 
+                   class="btn btn-sm btn-outline-success rounded-pill shadow-sm">
+                  <i class="fas fa-download me-1"></i>Download
+                </a>
+              {% else %}
+                <span class="text-muted small">Not Ready</span>
+              {% endif %}
+            </td>
+
+            <!-- DETAILS -->
+            <td>
+              <a href="{% url 'request_detail' req.pk %}" 
+                 class="btn btn-sm btn-outline-primary rounded-pill shadow-sm">
+                <i class="fas fa-info-circle"></i>
               </a>
             </td>
           </tr>
 
-
+          <!-- Remarks Modal -->
           {% if item.latest_status and item.latest_status.remarks %}
-          <div class="modal fade" id="remarksModal{{ req.id }}" tabindex="-1" aria-labelledby="remarksModalLabel{{ req.id }}" aria-hidden="true">
+          <div class="modal fade" id="remarksModal{{ req.id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content rounded-4">
+              <div class="modal-content rounded-4 shadow">
                 <div class="modal-header bg-danger text-white rounded-top-4">
-                  <h6 class="modal-title" id="remarksModalLabel{{ req.id }}">
-                    <i class="fas fa-info-circle me-1"></i>Disapproval Details
-                  </h6>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <h6 class="modal-title"><i class="fas fa-info-circle me-2"></i>Disapproval Details</h6>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                   <p><strong>Processed by:</strong> {{ item.latest_status.processed_by|default:item.latest_status.updated_by }}</p>
                   <p><strong>Comments:</strong></p>
-                  <div class="border rounded p-2 bg-light">
+                  <div class="border rounded p-3 bg-light">
                     {{ item.latest_status.remarks }}
                   </div>
                   {% if item.rejection_file %}
-                  <hr>
-                  <a href="{{ item.rejection_file }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="fas fa-file-download me-1"></i>Download Attachment
-                  </a>
+                    <hr>
+                    <a href="{{ item.rejection_file }}" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-file-download me-1"></i>Download Attachment
+                    </a>
                   {% elif item.latest_status.attachment %}
-                  <hr>
-                  <a href="{{ item.latest_status.attachment.url }}" class="btn btn-sm btn-outline-primary mt-2">
-                    <i class="fas fa-file-download me-1"></i>Download Attachment
-                  </a>
+                    <hr>
+                    <a href="{{ item.latest_status.attachment.url }}" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-file-download me-1"></i>Download Attachment
+                    </a>
                   {% endif %}
                 </div>
               </div>
@@ -543,69 +530,56 @@
 </div>
 {% endif %}
 
-  <div class="card border-0 shadow-lg rounded-4 mb-4">
-    <div class="card-body text-center">
-      <h5 class="fw-bold text-primary mb-4">Quick Actions</h5>
-      <div class="row g-3 justify-content-center">
-  <div class="row justify-content-center text-center my-4">
-  <div class="col-md-5 mb-3">
-    <a href="{% url 'request_transcript' %}" class="btn w-100">
-      <i class="fas fa-plus-circle me-1"></i> Request New Transcript
-    </a>
-  </div>
-
-  <div class="col-md-5 mb-3">
-    <a href="{% url 'student_approved_transcripts' %}" class="btn w-100">
-      <i class="fas fa-file-download me-1"></i> View Approved Transcripts
-    </a>
+<!-- Quick Actions -->
+<div class="card border-0 shadow-lg rounded-4 mb-4 bg-light bg-opacity-75 backdrop-blur-sm">
+  <div class="card-body text-center py-5">
+    <h5 class="fw-bold text-primary mb-4">
+      <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+    </h5>
+    <div class="row justify-content-center g-3">
+      <div class="col-md-4">
+        <a href="{% url 'request_transcript' %}" class="modern-btn">
+          <i class="fas fa-plus-circle me-2"></i> Request New Transcript
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="{% url 'student_approved_transcripts' %}" class="modern-btn">
+          <i class="fas fa-file-download me-2"></i> View Approved Transcripts
+        </a>
+      </div>
+    </div>
   </div>
 </div>
+
 <style>
-  /* From Uiverse.io by SujitAdroja – modified for your theme */
-.btn {
+/* 21st-century UI button */
+.modern-btn {
   display: inline-block;
+  width: 100%;
   text-align: center;
-  color: black;
+  font-weight: 600;
   text-transform: uppercase;
   text-decoration: none;
-  border: 2px solid black;
-  padding: 12px 20px;
+  border: none;
+  padding: 14px 20px;
   font-size: 15px;
-  font-weight: bold;
-  background: transparent;
-  position: relative;
-  transition: all 0.8s ease;
-  overflow: hidden;
-  border-radius: 6px;
+  color: #fff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0d6efd, #6610f2);
+  box-shadow: 0 6px 20px rgba(13, 110, 253, 0.3);
+  transition: all 0.4s ease;
 }
-
-.btn i {
-  margin-right: 6px;
+.modern-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(102, 16, 242, 0.4);
+  background: linear-gradient(135deg, #6610f2, #0d6efd);
+  color: #fff;
 }
-
-.btn:hover {
-  color: red;
-  border-color: black;
+.table td, .table th {
+  vertical-align: middle;
 }
-
-.btn::before {
-  content: "";
-  position: absolute;
-  height: 100%;
-  width: 0%;
-  top: 0;
-  left: -40px;
-  transform: skewX(45deg);
-  background-color: black;
-  z-index: -1;
-  transition: all 0.8s ease;
-}
-
-.btn:hover::before {
-  width: 160%;
-}
-
 </style>
+
       </div>
     </div>
   </div>

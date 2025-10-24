@@ -2,14 +2,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.utils import timezone
 from .models import (
     TranscriptRequest, TranscriptStatus, StaffProfile, StudentProfile,
     TranscriptBatch, TranscriptSelection, TranscriptReview
 )
 from .forms import TranscriptBatchForm, TranscriptSelectionForm, TranscriptReviewForm
 from django.core.mail import EmailMultiAlternatives
-from django.core.files.base import ContentFile
 from django.conf import settings
 import uuid
 from django.db.models import Count
@@ -258,6 +256,9 @@ def generate_transcript_preview(request, pk):
     from io import BytesIO
     import os
     from reportlab.graphics.barcode import code128
+    transcript_request = get_object_or_404(TranscriptRequest, pk=pk)
+    transcript_obj = getattr(transcript_request, 'transcript', None)
+    registrar_obj = None
     
     staff = StaffProfile.objects.filter(user=request.user).first()
     if not staff or staff.role not in ('registrar', 'exams_office'):
@@ -303,6 +304,9 @@ def generate_transcript_preview(request, pk):
         except Exception:
             # Fall back to generating on-the-fly below
             pass
+    transcript_request = get_object_or_404(TranscriptRequest, pk=pk)
+    transcript_obj = getattr(transcript_request, 'transcript', None)
+    registrar_obj = None
 
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
@@ -519,16 +523,8 @@ def generate_transcript_preview(request, pk):
     buffer.seek(0)
     pdf_bytes = buffer.getvalue()
 
-    # Save the generated PDF to Transcript model so preview and download use the same file
-    try:
-        from .models import Transcript
-        transcript_obj, _ = Transcript.objects.get_or_create(transcript_request=transcript_request)
-        transcript_obj.generated_by = transcript_obj.generated_by or (request.user.get_full_name() or request.user.username)
-        transcript_obj.date_generated = transcript_obj.date_generated or timezone.now()
-        # Don't set signature flags here; generator functions set them when used in approval flow
-        transcript_obj.file.save(f"{transcript_request.reference_code}_preview.pdf", ContentFile(pdf_bytes), save=True)
-    except Exception:
-        pass
+    # Note: This is a preview function - we do NOT save to Transcript model
+    # to avoid moving the request to "processed" status
 
     return FileResponse(BytesIO(pdf_bytes), as_attachment=False, filename=f"Transcript_Preview_{student.index_number}.pdf")
 

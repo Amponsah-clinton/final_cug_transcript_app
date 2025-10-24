@@ -183,19 +183,20 @@
   <div class="container">
 
     <!-- Logo + Portal Name -->
-    <a class="navbar-brand fw-bold text-warning d-flex align-items-center" 
-       href="{% if user.is_authenticated and user.is_staff %}
-                {% url 'staff_dashboard' %}
-              {% elif user.is_authenticated %}
-                {% url 'student_dashboard' %}
-              {% else %}
-                {% url 'landing_page' %}
-              {% endif %}">
-      <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1756722559/catholic-university-ghana-logo_onhrgj.jpg" 
-           alt="Logo" 
-           style="height:45px; width:45px; border-radius:50%; object-fit:cover; background:white; padding:3px; margin-right:8px;">
-      Transcript Portal
-    </a>
+<a class="navbar-brand fw-bold text-warning d-flex align-items-center" 
+   href="{% if user.is_authenticated and user.is_staff %}
+            {% url 'staff_dashboard' %}
+          {% elif user.is_authenticated %}
+            {% url 'student_dashboard' %}
+          {% else %}
+            {% url 'landing_page' %}
+          {% endif %}">
+  <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1761222538/cug_logo_new_e9d6v9.jpg" 
+       alt="Logo" 
+       class="me-2 logo-img">
+  <span class="portal-text">Transcript Portal</span>
+</a>
+
 
     <!-- Mobile Toggle -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navmenu"
@@ -277,7 +278,7 @@
           <li class="nav-item dropdown ms-lg-3">
             <a class="nav-link d-flex align-items-center px-2 py-1"
                href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-               
+              <!-- Profile Image Logic -->
               {% if user.studentprofile and user.studentprofile.profile_image %}
                 <img src="{{ user.studentprofile.profile_image.url }}" class="rounded-circle border border-2 border-light me-2"
                      width="34" height="34" style="object-fit: cover;">
@@ -338,9 +339,21 @@
     </div>
   </div>
 </nav>
+
 <style>
+.logo-img {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+  background: white;
+  padding: 3px;
+  border-radius: 8px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.1);
+}
+
+/* Dropdown styling */
 .navbar .dropdown-toggle::after {
-  display: none !important; /* Hide Bootstrap’s default arrow */
+  display: none !important;
 }
 
 .navbar .dropdown-menu {
@@ -359,11 +372,39 @@
   color: #ffc107 !important;
 }
 
+/* ✨ MOBILE FIX: Move ONLY the text below logo */
+@media (max-width: 991px) {
+  .navbar-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Keep logo aligned left */
+    text-align: center;
+  }
+
+  /* Move and center the text under the logo */
+  .navbar-brand span {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffc107;
+  }
+
+  .navbar-toggler {
+    position: absolute;
+    right: 1rem;
+    top: 0.8rem;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
 }
 </style>
+
 
 <style>
 
@@ -524,6 +565,27 @@
 .nav-link.hover-underline:hover {
   color:  #f8f8f8;
 }
+/* ✅ MOBILE ONLY: move "Transcript Portal" below logo and center it */
+@media (max-width: 991px) {
+  .navbar-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* keep logo on the left */
+    width: 100%;
+  }
+
+  /* ✅ Center only the text below the logo */
+  .navbar-brand .portal-text {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffc107;
+  }
+}
+
 
 </style>
 
