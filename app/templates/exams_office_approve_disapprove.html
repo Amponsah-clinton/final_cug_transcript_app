@@ -2,108 +2,202 @@
 
 {% block content %}
 <style>
+  :root {
+    --primary-color: #0061ff;
+    --accent-color: #00c853;
+    --danger-color: #ff1744;
+    --bg-gradient: linear-gradient(135deg, #f8faff, #eef2f7);
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --radius: 16px;
+  }
+
+  body {
+    background: var(--bg-gradient);
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  }
+
+  .modern-card {
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: linear-gradient(90deg, var(--primary-color), #5a7fff);
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .card-header i {
+    font-size: 1.3rem;
+    margin-right: 10px;
+  }
+
+  .section-title {
+    color: #4a5568;
+    font-weight: 700;
+    font-size: 1rem;
+    border-left: 4px solid var(--primary-color);
+    padding-left: 8px;
+    margin-bottom: 0.75rem;
+  }
+
   /* ===== Modern Button Styles ===== */
   .btn-modern {
     border: none;
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    padding: 0.7rem 1.5rem;
     font-weight: 600;
-    letter-spacing: 0.3px;
-    transition: all 0.25s ease-in-out;
+    letter-spacing: 0.2px;
+    transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
   }
 
   .btn-modern i {
     margin-right: 8px;
+    font-size: 0.9rem;
   }
 
-  /* Approve Button */
   .btn-approve {
     background: linear-gradient(90deg, #00c853, #00e676);
     color: white;
   }
+
   .btn-approve:hover {
-    background: linear-gradient(90deg, #00b34d, #00d86b);
-    box-shadow: 0 5px 12px rgba(0, 200, 83, 0.3);
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 200, 83, 0.3);
   }
 
-  /* Disapprove Button */
   .btn-disapprove {
     background: linear-gradient(90deg, #ff1744, #ff5252);
     color: white;
   }
+
   .btn-disapprove:hover {
-    background: linear-gradient(90deg, #e0143e, #ff3b3b);
-    box-shadow: 0 5px 12px rgba(255, 23, 68, 0.3);
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 23, 68, 0.3);
   }
 
-  /* Back Button */
   .btn-back {
     background: white;
     border: 2px solid #6c757d;
     color: #6c757d;
   }
+
   .btn-back:hover {
     background: #6c757d;
     color: white;
-    box-shadow: 0 5px 12px rgba(108,117,125,0.3);
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(108,117,125,0.2);
   }
 
-  /* Button layout */
   .action-buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    justify-content: flex-start;
-    margin-top: 1rem;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 10px;
+    background: #f1f5ff;
+    border: none;
+    color: #334155;
+    box-shadow: inset 0 0 0 1px rgba(0,97,255,0.1);
+  }
+
+  table {
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+  }
+
+  table thead {
+    background: linear-gradient(90deg, #0061ff, #5a7fff);
+    color: white;
+  }
+
+  table tbody tr:hover {
+    background-color: #f6f8ff;
+  }
+
+  textarea.form-control {
+    border-radius: 10px;
+    border: 1px solid #d0d7de;
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  textarea.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0,97,255,0.2);
+  }
+
+  @media (max-width: 767px) {
+    .card-header {
+      font-size: 1rem;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .btn-modern {
+      width: 100%;
+    }
   }
 </style>
 
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-lg-10">
-      <div class="card shadow border-0">
-        <div class="card-header bg-primary text-white d-flex align-items-center">
-          <i class="fas fa-graduation-cap me-2"></i>
-          <h5 class="mb-0">Exams Office – Approve/Disapprove Transcript</h5>
+      <div class="modern-card">
+        <div class="card-header">
+          <i class="fas fa-graduation-cap"></i>
+          <span>Exams Office – Approve or Disapprove Transcript</span>
         </div>
-        <div class="card-body">
-          
-          <!-- Student Information -->
+
+        <div class="card-body p-4">
           <div class="row mb-4 border-bottom pb-3">
             <div class="col-md-6 mb-3 mb-md-0">
-              <h6 class="text-muted">Student Information</h6>
-              <p class="mb-1"><strong>Name:</strong> {{ transcript_request.student.name }}</p>
-              <p class="mb-1"><strong>Index Number:</strong> {{ transcript_request.student.index_number }}</p>
-              <p class="mb-1"><strong>Program:</strong> {{ transcript_request.student.program.name }}</p>
+              <h6 class="section-title">Student Information</h6>
+              <p><strong>Name:</strong> {{ transcript_request.student.name }}</p>
+              <p><strong>Index Number:</strong> {{ transcript_request.student.index_number }}</p>
+              <p><strong>Program:</strong> {{ transcript_request.student.program.name }}</p>
             </div>
             <div class="col-md-6">
-              <h6 class="text-muted">Request Details</h6>
-              <p class="mb-1"><strong>Reference:</strong> {{ transcript_request.reference_code }}</p>
-              <p class="mb-1"><strong>Type:</strong> {{ transcript_request.get_transcript_type_display }}</p>
-              <p class="mb-1"><strong>Date Requested:</strong> {{ transcript_request.date_requested|date:"M d, Y H:i" }}</p>
+              <h6 class="section-title">Request Details</h6>
+              <p><strong>Reference:</strong> {{ transcript_request.reference_code }}</p>
+              <p><strong>Type:</strong> {{ transcript_request.get_transcript_type_display }}</p>
+              <p><strong>Date Requested:</strong> {{ transcript_request.date_requested|date:"M d, Y H:i" }}</p>
             </div>
           </div>
 
-          <!-- Current Status -->
-          <div class="alert alert-info">
-            <h6 class="alert-heading">Current Status</h6>
+          <div class="alert">
+            <h6 class="fw-semibold mb-2">Current Status</h6>
             {% if current_approval %}
               {% if current_approval.approved %}
-                <span class="badge bg-success">Approved</span>
-                <small class="text-muted d-block mt-1">by {{ current_approval.approved_by }} on {{ current_approval.date_approved|date:"M d, Y H:i" }}</small>
+                <span class="badge bg-success px-3 py-2">Approved</span>
+                <small class="d-block mt-1 text-muted">by {{ current_approval.approved_by }} on {{ current_approval.date_approved|date:"M d, Y H:i" }}</small>
               {% else %}
-                <span class="badge bg-danger">Disapproved</span>
-                <small class="text-muted d-block mt-1">by {{ current_approval.approved_by }} on {{ current_approval.date_approved|date:"M d, Y H:i" }}</small>
+                <span class="badge bg-danger px-3 py-2">Disapproved</span>
+                <small class="d-block mt-1 text-muted">by {{ current_approval.approved_by }} on {{ current_approval.date_approved|date:"M d, Y H:i" }}</small>
               {% endif %}
             {% else %}
-              <span class="badge bg-warning text-dark">Pending Review</span>
+              <span class="badge bg-warning text-dark px-3 py-2">Pending Review</span>
             {% endif %}
           </div>
 
@@ -127,19 +221,18 @@
                   <i class="fas fa-times"></i> Disapprove
                 </button>
               {% endif %}
-              <a href="{% url 'request_detail' transcript_request.id %}" class="btn-modern btn-back">
+              <a style="text-decoration: none;" href="{% url 'request_detail' transcript_request.id %}" class="btn-modern btn-back">
                 <i class="fas fa-arrow-left"></i> Back to Details
               </a>
             </div>
           </form>
 
-          <!-- Approval History -->
           {% if approval_history %}
           <div class="mt-4">
-            <h6 class="text-muted">Approval History</h6>
+            <h6 class="section-title">Approval History</h6>
             <div class="table-responsive">
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
+              <table class="table align-middle text-center">
+                <thead>
                   <tr>
                     <th>Action</th>
                     <th>By</th>
@@ -152,11 +245,11 @@
                   <tr>
                     <td>
                       {% if history.action == 'approved' %}
-                        <span class="badge bg-success">Approved</span>
+                        <span class="badge bg-success px-3 py-2">Approved</span>
                       {% elif history.action == 'disapproved' %}
-                        <span class="badge bg-danger">Disapproved</span>
+                        <span class="badge bg-danger px-3 py-2">Disapproved</span>
                       {% elif history.action == 'reapproved' %}
-                        <span class="badge bg-info">Re-approved</span>
+                        <span class="badge bg-info px-3 py-2">Re-approved</span>
                       {% endif %}
                     </td>
                     <td>{{ history.approved_by }}</td>
@@ -176,10 +269,10 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
   const disapproveBtn = document.querySelector('button[name="action"][value="disapprove"]');
   if (disapproveBtn) {
-    disapproveBtn.addEventListener('click', function(e) {
+    disapproveBtn.addEventListener('click', e => {
       if (!confirm('Are you sure you want to disapprove this transcript? This action cannot be undone.')) {
         e.preventDefault();
       }
