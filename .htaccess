@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# Handle static files
+RewriteCond %{REQUEST_URI} ^/static/(.*)$
+RewriteRule ^static/(.*)$ /static/$1 [L]
+
+# Handle media files
+RewriteCond %{REQUEST_URI} ^/media/(.*)$
+RewriteRule ^media/(.*)$ /media/$1 [L]
+
+# Handle Django URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.py/$1 [QSA,L]
