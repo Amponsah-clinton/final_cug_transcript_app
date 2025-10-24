@@ -267,119 +267,107 @@ def exams_office_manual_upload(request):
                 messages.error(request, "No student found with that index number.")
                 return render(request, 'exams_office_upload.html', {'form': form})
 
-            # Create a NEW TranscriptRequest for manual uploads
+            # Create a new TranscriptRequest
             t_type = form.cleaned_data.get('transcript_type')
             tr = TranscriptRequest.objects.create(
                 student=student,
                 transcript_type=t_type,
                 reference_code=f"REF-{uuid.uuid4().hex[:8].upper()}",
-                payment_made=True,  # Assume payment is made for manual uploads
-                amount=TranscriptType.objects.filter(type=t_type).first().price if TranscriptType.objects.filter(type=t_type).exists() else 0
+                payment_made=True,
+                amount=TranscriptType.objects.filter(type=t_type).first().price
+                if TranscriptType.objects.filter(type=t_type).exists()
+                else 0,
             )
 
-            # Attach uploaded file (original)
             uploaded_pdf = form.cleaned_data.get('transcript_file')
             transcript_obj, _ = Transcript.objects.get_or_create(transcript_request=tr)
-            if uploaded_pdf:
-                try:
-                    transcript_obj.uploaded_file.save(
-                        uploaded_pdf.name or f"uploaded_{uuid.uuid4().hex[:6]}.pdf",
-                        uploaded_pdf,
-                        save=False
-                    )
-                except Exception:
-                    pass
-
-            # Generate transcript PDF
-            base_url = request.build_absolute_uri('/')
             faculty_registrar = form.cleaned_data.get('faculty_registrar')
-            if t_type == 'unofficial':
-                transcript_obj, pdf_bytes = generate_unofficial_transcript_pdf(tr, faculty_registrar, base_url=base_url)
-            else:
-                transcript_obj, pdf_bytes = generate_official_transcript_pdf(tr, include_registrar=True, include_vc=True, base_url=base_url)
 
-            # Merge uploaded PDF (if provided) after generated pages and save as canonical transcript.file
-            if pdf_bytes:
-                try:
-                    merged_writer = PdfWriter()
-                    gen_reader = PdfReader(BytesIO(pdf_bytes))
-                    for page in gen_reader.pages:
+            # ✅ Step 1: Generate cover page (like your screenshot)
+            base_url = request.build_absolute_uri('/')
+            if t_type == 'unofficial':
+                _, cover_pdf = generate_unofficial_transcript_pdf(tr, faculty_registrar, base_url=base_url)
+            else:
+                _, cover_pdf = generate_official_transcript_pdf(
+                    tr, include_registrar=True, include_vc=True, base_url=base_url
+                )
+
+            # ✅ Step 2: Merge cover page + uploaded transcript (if any)
+            merged_writer = PdfWriter()
+
+            # Add the cover page first
+            cover_reader = PdfReader(BytesIO(cover_pdf))
+            for page in cover_reader.pages:
+                merged_writer.add_page(page)
+
+            # Add the uploaded transcript pages
+            if uploaded_pdf:
+                if hasattr(uploaded_pdf, 'temporary_file_path'):
+                    with open(uploaded_pdf.temporary_file_path(), 'rb') as uf:
+                        upload_reader = PdfReader(uf)
+                        for page in upload_reader.pages:
+                            merged_writer.add_page(page)
+                else:
+                    uploaded_pdf.seek(0)
+                    upload_reader = PdfReader(uploaded_pdf)
+                    for page in upload_reader.pages:
                         merged_writer.add_page(page)
 
-                    if uploaded_pdf:
-                        if hasattr(uploaded_pdf, 'temporary_file_path'):
-                            with open(uploaded_pdf.temporary_file_path(), 'rb') as uf:
-                                up_reader = PdfReader(uf)
-                                for page in up_reader.pages:
-                                    merged_writer.add_page(page)
-                        else:
-                            uploaded_pdf.seek(0)
-                            up_reader = PdfReader(uploaded_pdf)
-                            for page in up_reader.pages:
-                                merged_writer.add_page(page)
+            # ✅ Step 3: Save final merged PDF to transcript_obj.file
+            merged_output = BytesIO()
+            merged_writer.write(merged_output)
+            merged_output.seek(0)
 
-                    merged_output = BytesIO()
-                    merged_writer.write(merged_output)
-                    merged_output.seek(0)
+            filename = f"{tr.reference_code}_{t_type}_final.pdf"
+            transcript_obj.file.save(filename, ContentFile(merged_output.read()), save=True)
 
-                    merged_filename = f"{tr.reference_code}_{t_type}_combined.pdf"
-                    # remove previous files if present
-                    try:
-                        if transcript_obj.file:
-                            transcript_obj.file.delete(save=False)
-                    except Exception:
-                        pass
-                    transcript_obj.file.save(merged_filename, ContentFile(merged_output.read()), save=True)
-                except Exception as e:
-                    print("PDF merge/save failed:", e)
-
-            # Record payment breakdown
+            # ✅ Step 4: Record payment, verification, approval
             payment, _ = Payment.objects.get_or_create(transcript_request=tr)
             payment.officer_name = request.user.get_full_name() or request.user.username
             payment.cleared = True
-            payment.notes = (payment.notes or '') + f"\nManual upload by exams office."
+            payment.notes = (payment.notes or '') + "\nManual upload by exams office."
             payment.save()
 
-            # Verification and approval
-            if pdf_bytes and transcript_obj:
-                ver_obj, created = TranscriptVerification.objects.update_or_create(
-                    transcript=transcript_obj,
-                    defaults={
-                        'barcode': f"VER-{transcript_obj.transcript_id.hex[:12].upper()}",
-                        'verified': True,
-                        'date_verified': timezone.now()
-                    }
-                )
+            ver_obj, _ = TranscriptVerification.objects.update_or_create(
+                transcript=transcript_obj,
+                defaults={
+                    'barcode': f"VER-{transcript_obj.transcript_id.hex[:12].upper()}",
+                    'verified': True,
+                    'date_verified': timezone.now(),
+                },
+            )
 
-                # Create approval record (but not approved yet - needs registrar approval)
-                approval_obj, created = TranscriptApproval.objects.update_or_create(
-                    transcript=transcript_obj,
-                    defaults={
-                        'approved': False,  # Not approved yet - needs registrar approval
-                        'remarks': form.cleaned_data.get('remarks', ''),
-                        'approved_by': '',  # Will be filled by registrar
-                        'date_approved': None
-                    }
-                )
+            TranscriptApproval.objects.update_or_create(
+                transcript=transcript_obj,
+                defaults={
+                    'approved': False,
+                    'remarks': form.cleaned_data.get('remarks', ''),
+                    'approved_by': '',
+                    'date_approved': None,
+                },
+            )
 
-            # Create status record indicating it's at exams office and forwarded to registrar
+            # ✅ Step 5: Create and forward status
             TranscriptStatus.objects.create(
                 transcript_request=tr,
                 stage='exams_office',
                 updated_by=request.user.get_full_name() or request.user.username,
-                remarks=f"Manual upload by exams office. {form.cleaned_data.get('remarks', '')}"
+                remarks=f"Manual upload by exams office. {form.cleaned_data.get('remarks', '')}",
             )
 
-            # Forward to registrar for final approval
             TranscriptStatus.objects.create(
                 transcript_request=tr,
                 stage='registrar',
                 updated_by=request.user.get_full_name() or request.user.username,
-                remarks=f"Forwarded from exams office for final approval. {form.cleaned_data.get('remarks', '')}"
+                remarks=f"Forwarded from exams office for final approval. {form.cleaned_data.get('remarks', '')}",
             )
 
-            messages.success(request, f"Transcript uploaded successfully and forwarded to registrar for approval. Reference: {tr.reference_code}")
+            messages.success(
+                request,
+                f"Transcript uploaded with cover page and forwarded to registrar. Reference: {tr.reference_code}",
+            )
             return redirect('staff_dashboard')
+
     else:
         from .forms import ExamsOfficeUploadForm
         form = ExamsOfficeUploadForm()
@@ -2705,9 +2693,14 @@ def staff_dashboard(request):
             .order_by('-date_requested')
         )
 
+        # Only consider requests whose latest status is 'disapproved'.
+        latest_status_for_req = TranscriptStatus.objects.filter(transcript_request=OuterRef('pk')).order_by('-updated_on')
         exams_disapproved = (
             TranscriptRequest.objects.select_related('student', 'fee_clearance', 'transcript')
-            .filter(statuses__stage='disapproved')
+            .filter(
+                statuses__stage='disapproved',
+                statuses__updated_on=Subquery(latest_status_for_req.values('updated_on')[:1])
+            )
             .distinct()
             .order_by('-date_requested')
         )

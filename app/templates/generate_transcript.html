@@ -152,29 +152,27 @@
       </div>
 
       <div class="d-flex gap-2 mt-3">
-        <!-- ✅ PREVIEW (allowed) -->
         <a id="previewBtnOfficial" class="btn btn-outline-secondary" href="#" target="_blank">
           <i class="fas fa-eye me-1"></i>Preview
         </a>
-
-        <!-- 🚫 Just view disapprove page (does not move anything) -->
         <a href="{% url 'exams_office_approve_disapprove' transcript_request.id %}" 
-           class="btn btn-outline-danger">
-          <i class="fas fa-times me-1"></i>Disapprove
-        </a>
-
-        <!-- ✅ Only button that moves transcript -->
+   class="btn btn-outline-primary">
+  <i class="fas fa-folder-open me-1"></i> Disapprove
+</a>
         <button type="submit" name="action" value="forward" class="btn btn-primary">
           <i class="fas fa-forward me-1"></i>Forward to Registrar
         </button>
       </div>
 
       <script>
-        document.getElementById('previewBtnOfficial').addEventListener('click', function(e) {
-          e.preventDefault();
-          const url = "{% url 'generate_transcript_preview' transcript_request.id %}";
-          window.open(url, '_blank');
-        });
+        (function(){
+          const preview = document.getElementById('previewBtnOfficial');
+          preview.addEventListener('click', function(e){
+            e.preventDefault();
+            let url = "{% url 'generate_transcript_preview' transcript_request.id %}";
+            window.open(url, '_blank');
+          });
+        })();
       </script>
 
     {% else %}
@@ -186,8 +184,9 @@
 
         {% if already_forwarded %}
           <div class="alert alert-success">
-            ✅ This unofficial transcript has already been forwarded to the Registrar.
+            ✅ This unofficial transcript has already been forwarded to the Registrar. Registrar selection is locked.
           </div>
+          <label class="form-label">Faculty Registrar</label>
           <select class="form-select mb-3" disabled>
             {% for reg in registrars %}
               <option {% if parsed_registrar_id and parsed_registrar_id == reg.id %}selected{% endif %}>
@@ -196,6 +195,7 @@
             {% endfor %}
           </select>
           <button type="button" class="btn btn-secondary" disabled>Already Forwarded</button>
+
         {% else %}
           <label class="form-label">Select Faculty Registrar (Required)</label>
           <select name="registrar_id" class="form-select mb-3" required>
@@ -208,20 +208,15 @@
           </select>
 
           <div class="d-flex gap-2">
-            <!-- ✅ PREVIEW (allowed) -->
             <a id="previewBtn" class="btn btn-outline-secondary" href="#" target="_blank">
               <i class="fas fa-eye me-1"></i>Preview
             </a>
-
-            <!-- 🚫 Only a link to disapproval page, no logic trigger -->
             <a href="{% url 'exams_office_approve_disapprove' transcript_request.id %}" 
-               class="btn btn-outline-danger">
-              <i class="fas fa-times me-1"></i>Disapprove
-            </a>
-
-            <!-- ✅ ONLY this forwards -->
-            <button type="submit" name="action" value="forward" class="btn btn-primary">
-              <i class="fas fa-forward me-1"></i>Forward to Registrar
+   class="btn btn-outline-primary">
+  <i class="fas fa-folder-open me-1"></i>Disapprove
+</a>
+            <button type="submit" name="action" value="forward_unofficial" class="btn btn-primary">
+              <i class="fas fa-forward me-1"></i>Forward to Registrar for Approval
             </button>
           </div>
 
@@ -229,18 +224,35 @@
             (function(){
               const preview = document.getElementById('previewBtn');
               const select = document.querySelector('select[name="registrar_id"]');
-              function updatePreview() {
-                preview.style.opacity = select.value ? '1' : '0.6';
+              
+              function updatePreviewButton() {
+                if (select && !select.value) {
+                  preview.style.opacity = '0.6';
+                  preview.title = 'Please select a Faculty Registrar first';
+                } else {
+                  preview.style.opacity = '1';
+                  preview.title = 'Preview transcript';
+                }
               }
-              updatePreview();
-              select.addEventListener('change', updatePreview);
+
+              updatePreviewButton();
+
+              if (select) {
+                select.addEventListener('change', updatePreviewButton);
+              }
+
               preview.addEventListener('click', function(e){
                 e.preventDefault();
-                if (!select.value) {
-                  alert('Please select a Faculty Registrar first.');
+                const reg = select ? select.value : '';
+                
+                if (!reg) {
+                  alert('Please select a Faculty Registrar first before previewing.');
+                  if (select) select.focus();
                   return;
                 }
-                let url = "{% url 'generate_transcript_preview' transcript_request.id %}?registrar_id=" + encodeURIComponent(select.value);
+
+                let url = "{% url 'generate_transcript_preview' transcript_request.id %}";
+                if(reg){ url += '?registrar_id=' + encodeURIComponent(reg); }
                 window.open(url, '_blank');
               });
             })();
@@ -248,8 +260,31 @@
         {% endif %}
       </div>
     {% endif %}
+
+    <!-- ✅ Exams Office Approval Section -->
+    {% if user.is_staff and staff.role == 'exams_office' %}
+      <hr class="my-4">
+      <div class="mb-3">
+        <h5 class="fw-bold text-primary mb-3">Exams Office Actions</h5>
+        <p>You can approve or disapprove this transcript request.</p>
+
+        <div class="mb-3">
+          <label for="remarks" class="form-label fw-semibold">Remarks (optional)</label>
+          <textarea name="remarks" id="remarks" class="form-control" rows="3" placeholder="Add any remarks..."></textarea>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" name="action" value="approve" class="btn btn-success">
+            <i class="fas fa-check me-1"></i> Approve
+          </button>
+          <button type="submit" name="action" value="disapprove" class="btn btn-danger">
+            <i class="fas fa-times me-1"></i> Disapprove
+          </button>
+        </div>
+      </div>
+    {% endif %}
+
   </form>
 </div>
-
 
 {% endblock %}

@@ -133,6 +133,7 @@ body {
             {% csrf_token %}
 
             <div class="row mb-4">
+              <label class="form-label fw-semibold mb-2">Fee Status <span class="text-danger">*</span></label>
               <div class="col-md-6">
                 <div class="form-check">
                   {{ form.cleared }}
@@ -148,6 +149,9 @@ body {
                     Student owes fees
                   </label>
                 </div>
+              </div>
+              <div id="feeStatusError" class="text-danger mt-2" style="display:none; font-size:0.9rem;">
+                Please select one option.
               </div>
             </div>
 
@@ -186,6 +190,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const amountField = document.getElementById('amountField');
   const invoiceField = document.getElementById('invoiceField');
   const amountInput = amountField?.querySelector('input');
+  const feeForm = document.getElementById('feeForm');
+  const feeStatusError = document.getElementById('feeStatusError');
 
   function toggleFields() {
     if (owes && owes.checked) {
@@ -212,6 +218,18 @@ document.addEventListener('DOMContentLoaded', function() {
       toggleFields();
     });
   }
+
+  // ✅ Require user to select one option before submitting
+  feeForm.addEventListener('submit', function(e) {
+    if (!cleared.checked && !owes.checked) {
+      e.preventDefault();
+      feeStatusError.style.display = 'block';
+      feeStatusError.textContent = 'Please select one option.';
+      cleared.focus();
+    } else {
+      feeStatusError.style.display = 'none';
+    }
+  });
 
   toggleFields();
 });
